@@ -1,0 +1,25 @@
+	<script type="text/javascript"><!--
+		function display_navigation_item(itemId, imgId) {
+			var itemContainer = document.getElementById(itemId);
+			
+			if(itemContainer) {
+				imgId.src = 'templates/default/grafix/' + ((itemContainer.style.display == 'block') ? 'expand' : 'fold') + '.png';
+				itemContainer.style.display = (itemContainer.style.display == 'block') ? 'none' : 'block';
+			}
+		}
+	--></script>
+
+{FOR_ITEMS
+	<div class="navigation_item">
+		<!-- {ITEM_TYPE} -->{NO_LEAF
+		<img class="navigation_expand_img" src="templates/default/grafix/fold.png" onclick="display_navigation_item('{ITEM_CHILDREN_ID}_{UNIQUE}', this)">
+		NO_LEAF}
+		<div class="navigation_item_title navigation_item_{ITEM_STYLE_TYPE}" title="{ITEM_TYPE}"><a href="index.php?m={ITEM_CONCEPT_TYPE}&amp;view_id={ITEM_ID}">{ITEM_NAME}</a></div>{NO_LEAF
+			<!-- {ITEM_NAME} Children -->
+			<div class="navigation_item_children" id="{ITEM_CHILDREN_ID}_{UNIQUE}">
+				{ITEM_CHILDREN}
+			</div>
+			NO_LEAF}
+	</div>	
+FOR_ITEMS}
+{DIVIDER<div style="border-top: 1px solid black; margin: 10px 0px"></div>DIVIDER}
