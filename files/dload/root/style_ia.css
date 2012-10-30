@@ -1,0 +1,50 @@
+html {height:100%;}
+body {
+	font-family: arial, verdana, helvetica, sanf-serif;
+	font-size: 15px;
+	margin: 0px;
+	height: 100%;
+	background-image: url(back.jpg);
+}
+
+div#content {
+	padding: 12px;
+	margin: 0px;
+}
+	div#contentTop {
+		background-image: url(content-back-top.png);
+		background-repeat: no-repeat;
+		width: 1000px;
+		height: 15px;
+		padding: 0px;
+		margin: 0px;
+		margin-left: 1px;
+	}
+	div#contentBottom {
+		background-image: url(content-back-bottom.png);
+		background-repeat: no-repeat;
+		width: 1000px;
+		height: 15px;
+		padding: 0px;
+		margin: 0px;
+		margin-left: 1px;
+	}
+	div#contentMiddle {
+		background-image: url(content-back.png);
+		background-repeat: repeat;
+		width: 1000px;
+		border: 1px solid black;
+		border-top: 0px;
+		border-bottom: 0px;
+		padding: 0px;
+		margin: 0px;
+	}
+	
+a {
+	color: red;
+	text-decoration: underline;
+}
+
+a:hover {
+	text-decoration: underline;
+}

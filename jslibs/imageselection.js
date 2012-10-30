@@ -34,13 +34,15 @@ var lastMousePosX = 0;
 var lastMousePoxY = 0;
 var currentButtonId = 0;
 
+var currentViewType = 'iphone';
+
 var selectionStarted = false;
 
 function showImageActionSelection(fileNames)
 {
 	emptyQueueAction();
 
-	var currentFileName = document.getElementById('picture_name').value;
+	var currentFileName = document.getElementById('picture_name_' + currentViewType).value;
 	if(currentFileName != "")
 	{
 		var keepCurrentImage = false;
@@ -48,19 +50,20 @@ function showImageActionSelection(fileNames)
 		fileExtension = fileExtension[fileExtension.length-1];
 		currentFileName = currentFileName.substr(0, currentFileName.length - fileExtension.length - 1);
 		// check if only a "double resolution" image
-		var isDoubleResRegExp = new RegExp(currentFileName + '-2x', 'g');
-		if(fileNames[0].match(isDoubleResRegExp))
+		var isDoubleResRegExp = new RegExp(currentFileName + '-2x\.', 'g');
+		var isSameFileRegExp = new RegExp(currentFileName + '\.', 'g');
+		if(fileNames[0].match(isDoubleResRegExp) || fileNames[0].match(isSameFileRegExp))
 		{
 			// if it is only a double resolution image, do not change the original file
 			fileNames[0] = currentFileName + '.' + fileExtension;
 			keepCurrentImage = true;
 		}
-		for(var i = document.getElementById('maxbuttonid').value; i >= 1 ; i--)
+		for(var i = document.getElementById('maxbuttonid_' + currentViewType).value; i >= 1 ; i--)
 		{
-			if(document.getElementById('action_container_' + i) != null)
+			if(document.getElementById('action_container_' + i + '_' + currentViewType) != null)
 			{
 				if(keepCurrentImage)
-					document.getElementById('action_container_' + i).style.display = 'block';
+					document.getElementById('action_container_' + i + '_' + currentViewType).style.display = 'block';
 				else
 				{
 					removeAction(i);
@@ -70,16 +73,18 @@ function showImageActionSelection(fileNames)
 		if(!keepCurrentImage)
 		{
 			currentButtonid = 0;
-			document.getElementById('maxbuttonid').value = 0;
+			document.getElementById('maxbuttonid_' + currentViewType).value = 0;
 		}
 	}
+	
+	currentButtonId = document.getElementById('maxbuttonid_' + currentViewType).value;
 
 	if(document.getElementById('filemanagercontainer') != null)
 		document.getElementById('filemanagercontainer').style.display = 'none';
 	document.getElementById('imageselection_form').style.display = 'block';
-	document.getElementById('picture_name').value = fileNames[0];
+	document.getElementById('picture_name_' + currentViewType).value = fileNames[0];
 	
-	var imageArea = document.getElementById('image_edit_area');
+	var imageArea = document.getElementById('image_edit_area_' + currentViewType);
 	while(imageArea.firstChild != null)
 	{
 		imageArea.removeChild(imageArea.firstChild);
@@ -93,8 +98,8 @@ function showImageActionSelection(fileNames)
 	imagePreview.src = imageUploadDir + fileNames[0];
 	imagePreview.onload = function()
 		{
-			document.getElementById('picture_org_dim_x').value = imagePreview.width;
-			document.getElementById('picture_org_dim_y').value = imagePreview.height;
+			document.getElementById('picture_org_dim_x_' + currentViewType).value = imagePreview.width;
+			document.getElementById('picture_org_dim_y_' + currentViewType).value = imagePreview.height;
 			imageLoaded();
 		};
 	imagePreview.setAttribute('class', previewImageClass);
@@ -120,10 +125,10 @@ function startActionSelection(mouseEvent)
 	currentButtonId++;
 	var absoluteTop = currentDivOriginalTop = lastMousePosX = mouseEvent.pageY;
 	var absoluteLeft = currentDivOriginalLeft = lastMousePoxY = mouseEvent.pageX;
-	document.getElementById('maxbuttonid').value = currentButtonId;
+	document.getElementById('maxbuttonid_' + currentViewType).value = currentButtonId;
 	
 	currentDiv = document.createElement('div');
-	currentDiv.setAttribute('id', 'action_container_' + currentButtonId);
+	currentDiv.setAttribute('id', 'action_container_' + currentButtonId + '_' + currentViewType);
 	currentDiv.setAttribute('class', actionContainerClass);
 	currentDiv.style.top = absoluteTop + 'px';
 	currentDiv.style.left = absoluteLeft + 'px';
@@ -181,9 +186,9 @@ function createAction(divContainer, dimension, command)
 	if(divContainer == null)
 	{
 		currentButtonId++;
-		document.getElementById('maxbuttonid').value = currentButtonId;
+		document.getElementById('maxbuttonid_' + currentViewType).value = currentButtonId;
 		divContainer = document.createElement('div');
-		divContainer.setAttribute('id', 'action_container_' + currentButtonId);
+		divContainer.setAttribute('id', 'action_container_' + currentButtonId + '_' + currentViewType);
 		divContainer.setAttribute('class', actionContainerClass);
 		divContainer.style.top = dimension[0] + getAbsoluteTopPos(imagePreview) + 'px';
 		divContainer.style.left = dimension[1] + getAbsoluteLeftPos(imagePreview) + 'px';
@@ -214,10 +219,10 @@ function createAction(divContainer, dimension, command)
 	removeButton.style.top = Math.floor(parseFloat(divContainer.style.height) / 2) - 8 + 'px';
 	divContainer.appendChild(removeButton);
 		
-	var imageArea = document.getElementById('image_edit_area');
+	var imageArea = document.getElementById('image_edit_area_' + currentViewType);
 	
 	var divButtonActionContainer = document.createElement('div');
-	divButtonActionContainer.setAttribute('id', 'button_action_container_' + currentButtonId);
+	divButtonActionContainer.setAttribute('id', 'button_action_container_' + currentButtonId + '_' + currentViewType);
 	divButtonActionContainer.onmouseover = (function(actionId) { return function() { highlightAction(actionId, true); }; })(currentButtonId);
 	divButtonActionContainer.onmouseout = (function(actionId) { return function() { highlightAction(actionId, false); }; })(currentButtonId);
 	
@@ -227,7 +232,7 @@ function createAction(divContainer, dimension, command)
 	
 	var divButtonActionInput = document.createElement('div');
 	divButtonActionInput.setAttribute('class', 'content_form_input');
-	createViewList('loadaction_view_' + currentButtonId, ((parseInt(command) > 0) ? command : 0), textViewSelectionDefault, textViewSelectionCustom, command, divButtonActionInput);
+	createViewList('loadaction_view_' + currentButtonId + '_' + currentViewType, ((parseInt(command) > 0) ? command : 0), textViewSelectionDefault, textViewSelectionCustom, command, divButtonActionInput);
 	
 	var divButtonActionHelp = document.createElement('div');
 	divButtonActionHelp.setAttribute('class', 'content_form_details');
@@ -235,19 +240,19 @@ function createAction(divContainer, dimension, command)
 	
 	var hiddenInputButtonTop = document.createElement('input');
 	hiddenInputButtonTop.setAttribute('type', 'hidden');
-	hiddenInputButtonTop.setAttribute('name', 'button_top_' + currentButtonId);
+	hiddenInputButtonTop.setAttribute('name', 'button_top_' + currentButtonId + '_' + currentViewType);
 	hiddenInputButtonTop.value = getAbsoluteTopPos(divContainer) - getAbsoluteTopPos(imagePreview);
 	var hiddenInputButtonLeft = document.createElement('input');
 	hiddenInputButtonLeft.setAttribute('type', 'hidden');
-	hiddenInputButtonLeft.setAttribute('name', 'button_left_' + currentButtonId);
+	hiddenInputButtonLeft.setAttribute('name', 'button_left_' + currentButtonId + '_' + currentViewType);
 	hiddenInputButtonLeft.value = getAbsoluteLeftPos(divContainer) - getAbsoluteLeftPos(imagePreview);
 	var hiddenInputButtonHeight = document.createElement('input');
 	hiddenInputButtonHeight.setAttribute('type', 'hidden');
-	hiddenInputButtonHeight.setAttribute('name', 'button_height_' + currentButtonId);
+	hiddenInputButtonHeight.setAttribute('name', 'button_height_' + currentButtonId + '_' + currentViewType);
 	hiddenInputButtonHeight.value = parseFloat(divContainer.style.height);
 	var hiddenInputButtonWidth = document.createElement('input');
 	hiddenInputButtonWidth.setAttribute('type', 'hidden');
-	hiddenInputButtonWidth.setAttribute('name', 'button_width_' + currentButtonId);
+	hiddenInputButtonWidth.setAttribute('name', 'button_width_' + currentButtonId + '_' + currentViewType);
 	hiddenInputButtonWidth.value = parseFloat(divContainer.style.width);
 	
 	divButtonActionContainer.appendChild(hiddenInputButtonTop);
@@ -264,9 +269,9 @@ function createAction(divContainer, dimension, command)
 
 function removeAction(actionId)
 {
-	document.getElementsByTagName('body')[0].removeChild(document.getElementById('action_container_' + actionId));
-	if(document.getElementById('button_action_container_' + actionId) != null)
-		document.getElementById('image_edit_area').removeChild(document.getElementById('button_action_container_' + actionId));
+	document.getElementsByTagName('body')[0].removeChild(document.getElementById('action_container_' + actionId + '_' + currentViewType));
+	if(document.getElementById('button_action_container_' + actionId + '_' + currentViewType) != null)
+		document.getElementById('image_edit_area_' + currentViewType).removeChild(document.getElementById('button_action_container_' + actionId + '_' + currentViewType));
 }
 
 function numberOfDigits(id)
@@ -305,7 +310,7 @@ function getAbsoluteLeftPos(element)
 
 function highlightAction(actionId, highlight)
 {
-	var container = document.getElementById('action_container_' + actionId);
+	var container = document.getElementById('action_container_' + actionId + '_' + currentViewType);
 	if(highlight)
 	{
 		container.style.border = '4px solid red';
