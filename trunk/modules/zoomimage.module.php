@@ -75,39 +75,45 @@ class apdModuleZoomimage extends apdModuleBasicModule
 				
 		$buttonCounter = 0; // "nice" button counter, do not allow gaps
 		// go through list of sections
-		for($i = 1; $i <= $_REQUEST['maxbuttonid']; $i++)
+		$viewTypes = array('iphone', 'ipad');
+		foreach($viewTypes as $currentViewType)
 		{
-			// check if section exists
-			if(isset($_REQUEST['loadaction_view_' . $i]))
+			if(trim($_REQUEST['picture_name_' . $currentViewType]) != '')
 			{
-				$buttonCounter++;
-				
-				if($_REQUEST['loadaction_view_' . $i] >= 0)
+				for($i = 1; $i <= $_REQUEST['maxbuttonid_' . $currentViewType]; $i++)
 				{
-					// it is a linked view
-					if($_REQUEST['loadaction_view_' . $i] > 0)
+					// check if section exists
+					if(isset($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType]))
 					{
-						// insert into concept_zoommap_actions
-						$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_zoommap_actions (view_id, action_posx, action_posy, action_width, action_height, action_command) VALUES(?,?,?,?,?,?)", array(array($this->viewId, "i"), array($_REQUEST['button_left_' . $i], "i"), array($_REQUEST['button_top_' . $i], "i"), array($_REQUEST['button_width_' . $i], "i"), array($_REQUEST['button_height_' . $i], "i"), array($_REQUEST['loadaction_view_' . $i], "i")));
+						$buttonCounter++;
 						
-						// check if link exists in database already
-						$checkViewDestinationQuery = $this->mc->database->query("SELECT COUNT(*) as count FROM " . $this->mc->config['database_pref'] . "view_links WHERE view_id_parent = ? AND view_id_destination = ?", array(array($this->viewId, "i"), array($_REQUEST['loadaction_view_' . $i], "i")));
-						if($checkViewDestinationQuery->rows[0]->count == 0)
+						if($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType] >= 0)
 						{
-							// insert new link
-							$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "view_links (view_id_parent, view_id_destination) VALUES(?, ?)", array(array($this->viewId, "i"), array($_REQUEST['loadaction_view_' . $i], "i")));
+							// it is a linked view
+							if($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType] > 0)
+							{
+								// insert into concept_zoommap_actions
+								$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_zoommap_actions (view_id, view_type, action_posx, action_posy, action_width, action_height, action_command) VALUES(?,?,?,?,?,?,?)", array(array($this->viewId, "i"), array(($currentViewType == "iphone" ? 2 : 1), "i"),array($_REQUEST['button_left_' . $i . '_' . $currentViewType], "i"), array($_REQUEST['button_top_' . $i . '_' . $currentViewType], "i"), array($_REQUEST['button_width_' . $i . '_' . $currentViewType], "i"), array($_REQUEST['button_height_' . $i . '_' . $currentViewType], "i"), array($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType], "i")));
+								
+								// check if link exists in database already
+								$checkViewDestinationQuery = $this->mc->database->query("SELECT COUNT(*) as count FROM " . $this->mc->config['database_pref'] . "view_links WHERE view_id_parent = ? AND view_id_destination = ?", array(array($this->viewId, "i"), array($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType], "i")));
+								if($checkViewDestinationQuery->rows[0]->count == 0)
+								{
+									// insert new link
+									$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "view_links (view_id_parent, view_id_destination) VALUES(?, ?)", array(array($this->viewId, "i"), array($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType], "i")));
+								}
+							}
+							else
+							{
+								// insert into concept_zoommap_actions
+								$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_zoommap_actions (view_id, view_type, action_posx, action_posy, action_width, action_height, action_command) VALUES(?,?,?,?,?,?,?)", array(array($this->viewId, "i"), array(($currentViewType == "iphone" ? 2 : 1), "i"), array($_REQUEST['button_left_' . $i . '_' . $currentViewType], "i"), array($_REQUEST['button_top_' . $i . '_' . $currentViewType], "i"), array($_REQUEST['button_width_' . $i . '_' . $currentViewType], "i"), array($_REQUEST['button_height_' . $i . '_' . $currentViewType], "i"), array($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType . '_custom'], "s")));
+							}
 						}
 					}
-					else
-					{
-						// insert into concept_zoommap_actions
-						$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_zoommap_actions (view_id, action_posx, action_posy, action_width, action_height, action_command) VALUES(?,?,?,?,?,?)", array(array($this->viewId, "i"), array($_REQUEST['button_left_' . $i], "i"), array($_REQUEST['button_top_' . $i], "i"), array($_REQUEST['button_width_' . $i], "i"), array($_REQUEST['button_height_' . $i], "i"), array($_REQUEST['loadaction_view_' . $i . '_custom'], "s")));
-					}
 				}
+				$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_zoommap_images (view_id, view_type, image, width, height) VALUES(?,?,?,0,0)", array(array($this->viewId, "i"), array(($currentViewType == "iphone" ? 2 : 1), "i"), array($_REQUEST['picture_name_' . $currentViewType])));
 			}
-		}
-		
-		$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_zoommap_images (view_id, image, width, height) VALUES(?,?,0,0)", array(array($this->viewId, "i"), array($_REQUEST['picture_name'])));
+		}		
 		
 		// update concept type id for this view
 		$conceptQuery = $this->mc->database->query("SELECT concept_id FROM " . $this->mc->config['database_pref'] . "concepts WHERE concept_key = 'zoomimage'", array());
@@ -140,65 +146,68 @@ class apdModuleZoomimage extends apdModuleBasicModule
 	{
 		$imageFileName = "";
 	
-		$imageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_zoommap_images WHERE view_id = ?", array(array($this->viewId, "i")));
-		if(count($imageQuery->rows) > 0)
+		$imageQuery = $this->mc->database->query("SELECT A.image, B.view_name, A.view_type FROM " . $this->mc->config['database_pref'] . "concept_zoommap_images AS A, " . $this->mc->config['database_pref'] . "views AS B WHERE A.view_id = ? AND A.view_id = B.view_id", array(array($this->viewId, "i")));
+		foreach($imageQuery->rows as $currentImageFile)
 		{
-			$imageFileName = $imageQuery->rows[0]->image;
-		}
-		$filePath = $this->mc->config['upload_dir'] . 'modules/zoomimage/pictures/' . $imageFileName;
-		
-		$fileNameParts	= pathinfo($filePath);
-		$format = $fileNameParts['extension'];
-		
-		// check if file really exists
-		if(!is_dir($filePath))
-		{
-			// Get new dimensions
-			list($width_orig, $height_orig) = getimagesize($filePath);
-			if($width_orig > 0 && $height_orig > 0)
-			{
+			$imageFileName = $currentImageFile->image;
+			$filePath = $this->mc->config['upload_dir'] . 'modules/zoomimage/pictures/' . $imageFileName;
 			
-				$image = null;
-				if($format == 'jpg' || $format == 'jpeg')
+			$fileNameParts	= pathinfo($filePath);
+			$format = $fileNameParts['extension'];
+			
+			// check if file really exists
+			if(!is_dir($filePath))
+			{
+				// Get new dimensions
+				list($width_orig, $height_orig) = getimagesize($filePath);
+				if($width_orig > 0 && $height_orig > 0)
 				{
-					$image = imagecreatefromjpeg($filePath);
-				}
-				if($format == 'png')
-				{
-					$image = imagecreatefrompng($filePath);
-				}
-				else
-					return false;
-				// go through list of tiles, first horizontally
-				for($horizTile = 0; $horizTile < ceil($width_orig / $this->imageTileSize); $horizTile++)
-				{				
-					// and then vertically
-					for($vertiTile = 0; $vertiTile < ceil($height_orig / $this->imageTileSize); $vertiTile++)
+				
+					$image = null;
+					if($format == 'jpg' || $format == 'jpeg')
 					{
-						$tileWidth = min($this->imageTileSize, ($width_orig - ($horizTile * $this->imageTileSize)));
-						$tileHeight = min($this->imageTileSize, ($height_orig - ($vertiTile * $this->imageTileSize)));
-						// Resample
-						$tileImage = imagecreatetruecolor($tileWidth, $tileHeight);
-						// make image transparent
-						imagealphablending($tileImage, false);
-						imagesavealpha($tileImage,true);
-						$transparent = imagecolorallocatealpha($tileImage, 255, 255, 255, 127);
-						imagefilledrectangle($tileImage, 0, 0, $tileWidth, $tileHeight, $transparent);
-							
-						imagecopyresampled($tileImage, $image,
-							// destination point
-							0, 0,
-							// source point
-							$horizTile * $this->imageTileSize, $vertiTile * $this->imageTileSize,
-							// size
-							$tileWidth, $tileHeight, $tileWidth, $tileHeight);
-						
-						// Output
-						imagepng($tileImage, $this->mc->config['upload_dir'] . 'root/scrolltiles/' . $fileNameParts['filename'] . '_' . $vertiTile . '_' . $horizTile . '.png', 9);
-						imagedestroy($tileImage);
+						$image = imagecreatefromjpeg($filePath);
 					}
+					else if($format == 'png')
+					{
+						$image = imagecreatefrompng($filePath);
+					}
+					else
+						return false;
+						
+					$destinationFileName = $currentImageFile->view_name . '_tile_';
+					// go through list of tiles, first horizontally
+					for($horizTile = 0; $horizTile < ceil($width_orig / $this->imageTileSize); $horizTile++)
+					{				
+						// and then vertically
+						for($vertiTile = 0; $vertiTile < ceil($height_orig / $this->imageTileSize); $vertiTile++)
+						{
+							$tileWidth = min($this->imageTileSize, ($width_orig - ($horizTile * $this->imageTileSize)));
+							$tileHeight = min($this->imageTileSize, ($height_orig - ($vertiTile * $this->imageTileSize)));
+							// Resample
+							$tileImage = imagecreatetruecolor($tileWidth, $tileHeight);
+							// make image transparent
+							imagealphablending($tileImage, false);
+							imagesavealpha($tileImage,true);
+							$transparent = imagecolorallocatealpha($tileImage, 255, 255, 255, 127);
+							imagefilledrectangle($tileImage, 0, 0, $tileWidth, $tileHeight, $transparent);
+								
+							imagecopyresampled($tileImage, $image,
+								// destination point
+								0, 0,
+								// source point
+								$horizTile * $this->imageTileSize, $vertiTile * $this->imageTileSize,
+								// size
+								$tileWidth, $tileHeight, $tileWidth, $tileHeight);
+							
+							// Output
+							$outputFileSuffic = (count($imageQuery->rows) == 1 ? '' : ($currentImageFile->view_type == 2 ? '_io' : '_ia'));
+							imagepng($tileImage, $this->mc->config['upload_dir'] . 'root/scrolltiles/' . $destinationFileName . $vertiTile . '_' . $horizTile . $outputFileSuffic . '.png', 9);
+							imagedestroy($tileImage);
+						}
+					}
+					imagedestroy($image);
 				}
-				imagedestroy($image);
 			}
 		}
 		return false;
@@ -216,9 +225,7 @@ class apdModuleZoomimage extends apdModuleBasicModule
 	* --
 	*/
 	function createXmlFile()
-	{
-		$output = '<?xml version="1.0" encoding="UTF-8"?><xml>';
-		
+	{		
 		/*
 		<?xml version="1.0" encoding="UTF-8"?>
 		<xml>
@@ -229,117 +236,129 @@ class apdModuleZoomimage extends apdModuleBasicModule
 		</xml>
 		*/		
 			
-		$imageFileName = "";	
-		$imageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_zoommap_images WHERE view_id = ?", array(array($this->viewId, "i")));
-		if(count($imageQuery->rows) > 0)
+		$imageFileName = "";
+		$imageQuery = $this->mc->database->query("SELECT A.image, B.view_name, A.view_type FROM " . $this->mc->config['database_pref'] . "concept_zoommap_images AS A, " . $this->mc->config['database_pref'] . "views AS B WHERE A.view_id = ? AND A.view_id = B.view_id", array(array($this->viewId, "i")));
+		foreach($imageQuery->rows as $currentImageFile)
 		{
-			$imageFileName = $imageQuery->rows[0]->image;
-		}
-		$filePath = $this->mc->config['upload_dir'] . 'modules/zoomimage/pictures/' . $imageFileName;
-		$fileNameParts	= pathinfo($filePath);
-		// check if file really exists
-		if(!is_dir($filePath))
-		{		
-			// Get new dimensions
-			list($width_orig, $height_orig) = getimagesize($filePath);
-			if($width_orig > 0 && $height_orig > 0)
-			{
-				// as the picture will not be shown in original size, all dimensions have to be scaled
-				// to original image size
-				$this->scale = $width_orig / $_REQUEST['picture_org_dim_x'];
-				$this->yScale = $height_orig / $_REQUEST['picture_org_dim_y'];
-			
-				// go through list of tiles, first horizontally
-				for($horizTile = 0; $horizTile < ceil($width_orig / $this->imageTileSize); $horizTile++)
-				{				
-					// and then vertically
-					for($vertiTile = 0; $vertiTile < ceil($height_orig / $this->imageTileSize); $vertiTile++)
-					{
-						$tileWidth = min($this->imageTileSize, ($width_orig - ($horizTile * $this->imageTileSize)));
-						$tileHeight = min($this->imageTileSize, ($height_orig - ($vertiTile * $this->imageTileSize)));
-						
-						$output .= '<imagetile src="' . $fileNameParts['filename'] . '_' . $vertiTile . '_' . $horizTile .'" posx="' . ($horizTile * $this->imageTileSize) . '" posy="' . ($vertiTile * $this->imageTileSize) . '" width="' . $tileWidth . '" height="' . $tileHeight . '">';
-						
-						$buttonActionQuery = $this->mc->database->query("SELECT A.*, B.view_name FROM " . $this->mc->config['database_pref'] . "concept_zoommap_actions AS A, " . $this->mc->config['database_pref'] . "views AS B WHERE A.view_id = ? AND A.action_command = B.view_id", array(array($this->viewId, "i")));
-						foreach($buttonActionQuery->rows as $currentButtonAction)
+			$output = '<?xml version="1.0" encoding="UTF-8"?><xml>';
+			$imageFileName = $currentImageFile->image;
+		
+			$filePath = $this->mc->config['upload_dir'] . 'modules/zoomimage/pictures/' . $imageFileName;
+			$fileNameParts	= pathinfo($filePath);
+			// check if file really exists
+			if(!is_dir($filePath))
+			{		
+				// Get new dimensions
+				list($width_orig, $height_orig) = getimagesize($filePath);
+				if($width_orig > 0 && $height_orig > 0)
+				{
+					// as the picture will not be shown in original size, all dimensions have to be scaled
+					// to original image size
+					$this->scale = $width_orig / $_REQUEST['picture_org_dim_x'];
+					$this->yScale = $height_orig / $_REQUEST['picture_org_dim_y'];
+				
+					// go through list of tiles, first horizontally
+					for($horizTile = 0; $horizTile < ceil($width_orig / $this->imageTileSize); $horizTile++)
+					{				
+						// and then vertically
+						for($vertiTile = 0; $vertiTile < ceil($height_orig / $this->imageTileSize); $vertiTile++)
 						{
-							//print_r($currentButtonAction);
-							// check if buttonaction is suitable for this current tile
+							$tileWidth = min($this->imageTileSize, ($width_orig - ($horizTile * $this->imageTileSize)));
+							$tileHeight = min($this->imageTileSize, ($height_orig - ($vertiTile * $this->imageTileSize)));
 							
-							// case 1: action starts within this tile
-							if(
-								// contains X
-								($this->scale($currentButtonAction->action_posx) >= ($horizTile * $this->imageTileSize) && $this->scale($currentButtonAction->action_posx) <= ($horizTile * $this->imageTileSize + $tileWidth)) &&
-								// contains Y
-								($this->scale($currentButtonAction->action_posy) >= ($vertiTile * $this->imageTileSize) && $this->scale($currentButtonAction->action_posy) <= ($vertiTile * $this->imageTileSize + $tileHeight))
-							)
+							$output .= '<imagetile src="' . $currentImageFile->view_name . '_tile_' . $vertiTile . '_' . $horizTile .'" posx="' . ($horizTile * $this->imageTileSize) . '" posy="' . ($vertiTile * $this->imageTileSize) . '" width="' . $tileWidth . '" height="' . $tileHeight . '">';
+							
+							$buttonActionQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_zoommap_actions WHERE view_id = ? AND view_type = ?", array(array($this->viewId, "i"), array($currentImageFile->view_type, "i")));
+							foreach($buttonActionQuery->rows as $currentButtonAction)
 							{
-								$output .= '<action';
-								$output .= ' posx="' . ($this->scale($currentButtonAction->action_posx) - ($horizTile * $this->imageTileSize)) . '"';
-								$output .= ' posy="' . ($this->scale($currentButtonAction->action_posy) - ($vertiTile * $this->imageTileSize)) . '"';
-								$output .= ' height="' . min($this->scale($currentButtonAction->action_height), (($tileHeight + $vertiTile * $this->imageTileSize) - $this->scale($currentButtonAction->action_posy))) . '"';
-								$output .= ' width="' . min($this->scale($currentButtonAction->action_width), (($tileWidth + $horizTile * $this->imageTileSize) - $this->scale($currentButtonAction->action_posx))) . '"';
-								$output .= ' action="loadPage::' . $currentButtonAction->view_name . "&amp;YES\" />\n";
+								// check if buttonaction is suitable for this current tile
+								
+								$buttonOutput = "";
+								// case 1: action starts within this tile
+								if(
+									// contains X
+									($this->scale($currentButtonAction->action_posx) >= ($horizTile * $this->imageTileSize) && $this->scale($currentButtonAction->action_posx) <= ($horizTile * $this->imageTileSize + $tileWidth)) &&
+									// contains Y
+									($this->scale($currentButtonAction->action_posy) >= ($vertiTile * $this->imageTileSize) && $this->scale($currentButtonAction->action_posy) <= ($vertiTile * $this->imageTileSize + $tileHeight))
+								)
+								{
+									$buttonOutput .= '<action';
+									$buttonOutput .= ' posx="' . ($this->scale($currentButtonAction->action_posx) - ($horizTile * $this->imageTileSize)) . '"';
+									$buttonOutput .= ' posy="' . ($this->scale($currentButtonAction->action_posy) - ($vertiTile * $this->imageTileSize)) . '"';
+									$buttonOutput .= ' height="' . min($this->scale($currentButtonAction->action_height), (($tileHeight + $vertiTile * $this->imageTileSize) - $this->scale($currentButtonAction->action_posy))) . '"';
+									$buttonOutput .= ' width="' . min($this->scale($currentButtonAction->action_width), (($tileWidth + $horizTile * $this->imageTileSize) - $this->scale($currentButtonAction->action_posx))) . '"';
+								}
+								// case 2: action started above this tile
+								else if(
+									// contains X
+									($this->scale($currentButtonAction->action_posx) >= ($horizTile * $this->imageTileSize) && $this->scale($currentButtonAction->action_posx) <= ($horizTile * $this->imageTileSize + $tileWidth)) &&
+									// does not contain Y
+									($this->scale($currentButtonAction->action_posy) <= ($vertiTile * $this->imageTileSize) && ($this->scale($currentButtonAction->action_posy) + $this->scale($currentButtonAction->action_height)) >= ($vertiTile * $this->imageTileSize))
+								)
+								{
+									$buttonOutput .= '<action';
+									$buttonOutput .= ' posx="' . ($this->scale($currentButtonAction->action_posx) - ($horizTile * $this->imageTileSize)) . '"';
+									$buttonOutput .= ' posy="0"';
+									$buttonOutput .= ' height="' . ($this->scale($currentButtonAction->action_height) - (($vertiTile * $this->imageTileSize) - $this->scale($currentButtonAction->action_posy))) . '"';
+									$buttonOutput .= ' width="' . min($this->scale($currentButtonAction->action_width), (($tileWidth + $horizTile * $this->imageTileSize) - $this->scale($currentButtonAction->action_posx))) . '"';
+								}
+								// case 3: action started left to this tile
+								else if(
+									// does not containx X
+									($this->scale($currentButtonAction->action_posx) <= ($horizTile * $this->imageTileSize) && ($this->scale($currentButtonAction->action_posx) + $this->scale($currentButtonAction->action_width)) >= ($horizTile * $this->imageTileSize)) &&
+									// contains Y
+									($this->scale($currentButtonAction->action_posy) >= ($vertiTile * $this->imageTileSize) && $this->scale($currentButtonAction->action_posy) <= ($vertiTile * $this->imageTileSize + $tileHeight))
+								)
+								{
+									$buttonOutput .= '<action';
+									$buttonOutput .= ' posx="0"';
+									$buttonOutput .= ' posy="' . ($this->scale($currentButtonAction->action_posy) - ($vertiTile * $this->imageTileSize)) . '"';
+									$buttonOutput .= ' height="' . min($this->scale($currentButtonAction->action_height), (($tileHeight + $vertiTile * $this->imageTileSize) - $this->scale($currentButtonAction->action_posy))) . '"';
+									$buttonOutput .= ' width="' . ($this->scale($currentButtonAction->action_width) - (($horizTile * $this->imageTileSize) - $this->scale($currentButtonAction->action_posx))) . '"';
+								}
+								// case 4: action started above and left to this tile
+								else if(
+									// does not containx X
+									($this->scale($currentButtonAction->action_posx) <= ($horizTile * $this->imageTileSize) && ($this->scale($currentButtonAction->action_posx) + $this->scale($currentButtonAction->action_width)) >= ($horizTile * $this->imageTileSize)) &&
+									// does not contain Y
+									($this->scale($currentButtonAction->action_posy) <= ($vertiTile * $this->imageTileSize) && ($this->scale($currentButtonAction->action_posy) + $this->scale($currentButtonAction->action_height)) >= ($vertiTile * $this->imageTileSize))
+								)
+								{
+									$buttonOutput .= '<action';
+									$buttonOutput .= ' posx="0"';
+									$buttonOutput .= ' posy="0"';
+									$buttonOutput .= ' height="' . ($this->scale($currentButtonAction->action_height) - (($vertiTile * $this->imageTileSize) - $this->scale($currentButtonAction->action_posy))) . '"';
+									$buttonOutput .= ' width="' . ($this->scale($currentButtonAction->action_width) - (($horizTile * $this->imageTileSize) - $this->scale($currentButtonAction->action_posx))) . '"';
+								}
+								if($buttonOutput != "")
+								{
+									if(is_numeric($currentButtonAction->action_command))
+									{
+										$actionViewQuery = $this->mc->database->query("SELECT view_name FROM " . $this->mc->config['database_pref'] . "views WHERE view_id = ?", array(array($currentButtonAction->action_command, "i")));
+										if(count($actionViewQuery->rows) > 0)
+											$buttonOutput .= ' action="loadPage::' . $actionViewQuery->view_name . "&amp;YES\" />\n";
+									}
+									else
+									{
+										$buttonOutput .= ' action="' . str_replace('"', '\"', $currentButtonAction->action_command) . "\" />\n";
+									}
+									$output .= $buttonOutput;
+								}
 							}
-							// case 2: action started above this tile
-							else if(
-								// contains X
-								($this->scale($currentButtonAction->action_posx) >= ($horizTile * $this->imageTileSize) && $this->scale($currentButtonAction->action_posx) <= ($horizTile * $this->imageTileSize + $tileWidth)) &&
-								// does not contain Y
-								($this->scale($currentButtonAction->action_posy) <= ($vertiTile * $this->imageTileSize) && ($this->scale($currentButtonAction->action_posy) + $this->scale($currentButtonAction->action_height)) >= ($vertiTile * $this->imageTileSize))
-							)
-							{
-								$output .= '<action';
-								$output .= ' posx="' . ($this->scale($currentButtonAction->action_posx) - ($horizTile * $this->imageTileSize)) . '"';
-								$output .= ' posy="0"';
-								$output .= ' height="' . ($this->scale($currentButtonAction->action_height) - (($vertiTile * $this->imageTileSize) - $this->scale($currentButtonAction->action_posy))) . '"';
-								$output .= ' width="' . min($this->scale($currentButtonAction->action_width), (($tileWidth + $horizTile * $this->imageTileSize) - $this->scale($currentButtonAction->action_posx))) . '"';
-								$output .= ' action="loadPage::' . $currentButtonAction->view_name . "&amp;YES\" />\n";
-							}
-							// case 3: action started left to this tile
-							else if(
-								// does not containx X
-								($this->scale($currentButtonAction->action_posx) <= ($horizTile * $this->imageTileSize) && ($this->scale($currentButtonAction->action_posx) + $this->scale($currentButtonAction->action_width)) >= ($horizTile * $this->imageTileSize)) &&
-								// contains Y
-								($this->scale($currentButtonAction->action_posy) >= ($vertiTile * $this->imageTileSize) && $this->scale($currentButtonAction->action_posy) <= ($vertiTile * $this->imageTileSize + $tileHeight))
-							)
-							{
-								$output .= '<action';
-								$output .= ' posx="0"';
-								$output .= ' posy="' . ($this->scale($currentButtonAction->action_posy) - ($vertiTile * $this->imageTileSize)) . '"';
-								$output .= ' height="' . min($this->scale($currentButtonAction->action_height), (($tileHeight + $vertiTile * $this->imageTileSize) - $this->scale($currentButtonAction->action_posy))) . '"';
-								$output .= ' width="' . ($this->scale($currentButtonAction->action_width) - (($horizTile * $this->imageTileSize) - $this->scale($currentButtonAction->action_posx))) . '"';
-								$output .= ' action="loadPage::' . $currentButtonAction->view_name . "&amp;YES\" />\n";
-							}
-							// case 4: action started above and left to this tile
-							else if(
-								// does not containx X
-								($this->scale($currentButtonAction->action_posx) <= ($horizTile * $this->imageTileSize) && ($this->scale($currentButtonAction->action_posx) + $this->scale($currentButtonAction->action_width)) >= ($horizTile * $this->imageTileSize)) &&
-								// does not contain Y
-								($this->scale($currentButtonAction->action_posy) <= ($vertiTile * $this->imageTileSize) && ($this->scale($currentButtonAction->action_posy) + $this->scale($currentButtonAction->action_height)) >= ($vertiTile * $this->imageTileSize))
-							)
-							{
-								$output .= '<action';
-								$output .= ' posx="0"';
-								$output .= ' posy="0"';
-								$output .= ' height="' . ($this->scale($currentButtonAction->action_height) - (($vertiTile * $this->imageTileSize) - $this->scale($currentButtonAction->action_posy))) . '"';
-								$output .= ' width="' . ($this->scale($currentButtonAction->action_width) - (($horizTile * $this->imageTileSize) - $this->scale($currentButtonAction->action_posx))) . '"';
-								$output .= ' action="loadPage::' . $currentButtonAction->view_name . "&amp;YES\" />\n";
-							}
+							
+							$output .= "</imagetile>\n";
 						}
-						
-						$output .= "</imagetile>\n";
 					}
 				}
 			}
-		}
+				
+			$output .= '</xml>';
 			
-		$output .= '</xml>';
-		
-		$outputFileHandle = fopen($this->mc->config['upload_dir'] . '/root/xml/'. $this->viewDetails->view_name . '.xml', 'w');
-		fwrite($outputFileHandle, $output);
-		fclose($outputFileHandle);
-		
+			$outputFileSuffic = (count($imageQuery->rows) == 1 ? '' : ($currentImageFile->view_type == 2 ? '_io' : '_ia'));
+			$outputFileHandle = fopen($this->mc->config['upload_dir'] . '/root/xml/'. $this->viewDetails->view_name . $outputFileSuffic . '.xml', 'w');
+			fwrite($outputFileHandle, $output);
+			fclose($outputFileHandle);
+		}
 		return true;
 	}
 	
