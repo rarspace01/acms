@@ -120,7 +120,7 @@ class apdViewBasicModule implements apdIView
 	
 		// get all languages that exist from "languages" table in database
 		// we need all columns
-		$languageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "localisations", array());
+		$languageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "localisations WHERE local_active = 1", array());
 		
 		// get template-snippet for language-listing
 		preg_match_all('#\{FOR_LANGUAGES_BASIC(.*?)FOR_LANGUAGES_BASIC\}#si', $this->template, $forLanguagesBasic);

@@ -37,15 +37,17 @@ var currentButtonId = 0;
 var currentViewType = 'iphone';
 
 var selectionStarted = false;
+var initPhaseImageSelection = true;
 
 function showImageActionSelection(fileNames)
 {
 	emptyQueueAction();
 
 	var currentFileName = document.getElementById('picture_name_' + currentViewType).value;
+	var imageArea = document.getElementById('image_edit_area_' + currentViewType);
+	var keepCurrentImage = false;
 	if(currentFileName != "")
 	{
-		var keepCurrentImage = false;
 		var fileExtension = currentFileName.split(".");
 		fileExtension = fileExtension[fileExtension.length-1];
 		currentFileName = currentFileName.substr(0, currentFileName.length - fileExtension.length - 1);
@@ -58,65 +60,59 @@ function showImageActionSelection(fileNames)
 			fileNames[0] = currentFileName + '.' + fileExtension;
 			keepCurrentImage = true;
 		}
+	}
+	
+	if(!keepCurrentImage)
+	{
 		for(var i = document.getElementById('maxbuttonid_' + currentViewType).value; i >= 1 ; i--)
 		{
 			if(document.getElementById('action_container_' + i + '_' + currentViewType) != null)
 			{
-				if(keepCurrentImage)
-					document.getElementById('action_container_' + i + '_' + currentViewType).style.display = 'block';
-				else
-				{
-					removeAction(i);
-				}
+				removeAction(i);
 			}
 		}
-		if(!keepCurrentImage)
+		document.getElementById('maxbuttonid_' + currentViewType).value = 0;
+		while(imageArea.firstChild != null)
 		{
-			currentButtonid = 0;
-			document.getElementById('maxbuttonid_' + currentViewType).value = 0;
+			imageArea.removeChild(imageArea.firstChild);
 		}
-	}
+		imageArea.appendChild(document.createTextNode(fileNames[0] + ':'));
+		var pElement = document.createElement('p');
+		imageArea.appendChild(pElement);
 	
+		imagePreview = new Image();
+		imagePreview.src = imageUploadDir + fileNames[0];
+		imagePreview.onload = function()
+			{
+				document.getElementById('picture_org_dim_x_' + currentViewType).value = imagePreview.width;
+				document.getElementById('picture_org_dim_y_' + currentViewType).value = imagePreview.height;
+				imageLoaded();
+			};
+		imagePreview.setAttribute('class', previewImageClass);
+		imagePreview.setAttribute('unselectable', 'on');
+		imagePreview.onselectstart = function() { return false; };
+		imagePreview.ondragstart = function() { return false; };
+		
+		// selection process
+		imagePreview.onmousedown = startActionSelection;
+		imagePreview.onmousemove = moveActionSelection;
+		imagePreview.onmouseup = endActionSelection;
+		imagePreview.setAttribute('id', 'preview_image_' + currentViewType);
+		imageArea.appendChild(imagePreview);
+	}
+	imagePreview = document.getElementById('preview_image_' + currentViewType);
 	currentButtonId = document.getElementById('maxbuttonid_' + currentViewType).value;
 
 	if(document.getElementById('filemanagercontainer') != null)
 		document.getElementById('filemanagercontainer').style.display = 'none';
 	document.getElementById('imageselection_form').style.display = 'block';
 	document.getElementById('picture_name_' + currentViewType).value = fileNames[0];
-	
-	var imageArea = document.getElementById('image_edit_area_' + currentViewType);
-	while(imageArea.firstChild != null)
-	{
-		imageArea.removeChild(imageArea.firstChild);
-	}
-	
-	imageArea.appendChild(document.createTextNode(fileNames[0] + ':'));
-	var pElement = document.createElement('p');
-	imageArea.appendChild(pElement);
-	
-	imagePreview = new Image();
-	imagePreview.src = imageUploadDir + fileNames[0];
-	imagePreview.onload = function()
-		{
-			document.getElementById('picture_org_dim_x_' + currentViewType).value = imagePreview.width;
-			document.getElementById('picture_org_dim_y_' + currentViewType).value = imagePreview.height;
-			imageLoaded();
-		};
-	imagePreview.setAttribute('class', previewImageClass);
-	imagePreview.setAttribute('unselectable', 'on');
-	imagePreview.onselectstart = function() { return false; };
-	imagePreview.ondragstart = function() { return false; };
-	
-	// selection process
-	imagePreview.onmousedown = startActionSelection;
-	imagePreview.onmousemove = moveActionSelection;
-	imagePreview.onmouseup = endActionSelection;
-	
-	imageArea.appendChild(imagePreview);
 }
 
 function startActionSelection(mouseEvent) 
 {
+	var imageEditAreaDiv = document.getElementById('image_edit_area_' + currentViewType);
+	
 	if (!mouseEvent)
 		mouseEvent = window.event;
 	
@@ -136,7 +132,7 @@ function startActionSelection(mouseEvent)
 	currentDiv.onmousemove = moveActionSelection;	
 	currentDiv.onmouseup = endActionSelection;
 	
-	document.getElementsByTagName('body')[0].appendChild(currentDiv);
+	imageEditAreaDiv.appendChild(currentDiv);
 }
 
 function moveActionSelection(mouseEvent) 
@@ -183,6 +179,8 @@ function endActionSelection(mouseEvent)
 
 function createAction(divContainer, dimension, command)
 {
+	var imageEditAreaDiv = document.getElementById('image_edit_area_' + currentViewType);
+
 	if(divContainer == null)
 	{
 		currentButtonId++;
@@ -195,7 +193,7 @@ function createAction(divContainer, dimension, command)
 		divContainer.style.height = dimension[2] + 'px';
 		divContainer.style.width = dimension[3] + 'px';
 		
-		document.getElementsByTagName('body')[0].appendChild(divContainer);
+		imageEditAreaDiv.appendChild(divContainer);
 	}
 	
 	divContainer.style.width = Math.max(16, parseFloat(divContainer.style.width)) + 'px';
@@ -269,9 +267,11 @@ function createAction(divContainer, dimension, command)
 
 function removeAction(actionId)
 {
-	document.getElementsByTagName('body')[0].removeChild(document.getElementById('action_container_' + actionId + '_' + currentViewType));
+	var imageEditAreaDiv = document.getElementById('image_edit_area_' + currentViewType);
+	
+	imageEditAreaDiv.removeChild(document.getElementById('action_container_' + actionId + '_' + currentViewType));
 	if(document.getElementById('button_action_container_' + actionId + '_' + currentViewType) != null)
-		document.getElementById('image_edit_area_' + currentViewType).removeChild(document.getElementById('button_action_container_' + actionId + '_' + currentViewType));
+		imageEditAreaDiv.removeChild(document.getElementById('button_action_container_' + actionId + '_' + currentViewType));
 }
 
 function numberOfDigits(id)

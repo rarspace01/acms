@@ -75,43 +75,43 @@ class apdModuleZoomimage extends apdModuleBasicModule
 				
 		$buttonCounter = 0; // "nice" button counter, do not allow gaps
 		// go through list of sections
-		$viewTypes = array('iphone', 'ipad');
-		foreach($viewTypes as $currentViewType)
+		$viewTypesQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "devices", array());
+		foreach($viewTypesQuery->rows as $currentViewType)
 		{
-			if(trim($_REQUEST['picture_name_' . $currentViewType]) != '')
+			if(trim($_REQUEST['picture_name_' . $currentViewType->device_id]) != '')
 			{
-				for($i = 1; $i <= $_REQUEST['maxbuttonid_' . $currentViewType]; $i++)
+				for($i = 1; $i <= $_REQUEST['maxbuttonid_' . $currentViewType->device_id]; $i++)
 				{
 					// check if section exists
-					if(isset($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType]))
+					if(isset($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_id]))
 					{
 						$buttonCounter++;
 						
-						if($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType] >= 0)
+						if($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_id] >= 0)
 						{
 							// it is a linked view
-							if($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType] > 0)
+							if($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_id] > 0)
 							{
 								// insert into concept_zoommap_actions
-								$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_zoommap_actions (view_id, view_type, action_posx, action_posy, action_width, action_height, action_command) VALUES(?,?,?,?,?,?,?)", array(array($this->viewId, "i"), array(($currentViewType == "iphone" ? 2 : 1), "i"),array($_REQUEST['button_left_' . $i . '_' . $currentViewType], "i"), array($_REQUEST['button_top_' . $i . '_' . $currentViewType], "i"), array($_REQUEST['button_width_' . $i . '_' . $currentViewType], "i"), array($_REQUEST['button_height_' . $i . '_' . $currentViewType], "i"), array($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType], "i")));
+								$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_zoommap_actions (view_id, view_type, action_posx, action_posy, action_width, action_height, action_command) VALUES(?,?,?,?,?,?,?)", array(array($this->viewId, "i"), array($currentViewType->device_id, "i"),array($_REQUEST['button_left_' . $i . '_' . $currentViewType->device_id], "i"), array($_REQUEST['button_top_' . $i . '_' . $currentViewType->device_id], "i"), array($_REQUEST['button_width_' . $i . '_' . $currentViewType->device_id], "i"), array($_REQUEST['button_height_' . $i . '_' . $currentViewType->device_id], "i"), array($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_id], "i")));
 								
 								// check if link exists in database already
-								$checkViewDestinationQuery = $this->mc->database->query("SELECT COUNT(*) as count FROM " . $this->mc->config['database_pref'] . "view_links WHERE view_id_parent = ? AND view_id_destination = ?", array(array($this->viewId, "i"), array($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType], "i")));
+								$checkViewDestinationQuery = $this->mc->database->query("SELECT COUNT(*) as count FROM " . $this->mc->config['database_pref'] . "view_links WHERE view_id_parent = ? AND view_id_destination = ?", array(array($this->viewId, "i"), array($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_id], "i")));
 								if($checkViewDestinationQuery->rows[0]->count == 0)
 								{
 									// insert new link
-									$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "view_links (view_id_parent, view_id_destination) VALUES(?, ?)", array(array($this->viewId, "i"), array($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType], "i")));
+									$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "view_links (view_id_parent, view_id_destination) VALUES(?, ?)", array(array($this->viewId, "i"), array($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_id], "i")));
 								}
 							}
 							else
 							{
 								// insert into concept_zoommap_actions
-								$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_zoommap_actions (view_id, view_type, action_posx, action_posy, action_width, action_height, action_command) VALUES(?,?,?,?,?,?,?)", array(array($this->viewId, "i"), array(($currentViewType == "iphone" ? 2 : 1), "i"), array($_REQUEST['button_left_' . $i . '_' . $currentViewType], "i"), array($_REQUEST['button_top_' . $i . '_' . $currentViewType], "i"), array($_REQUEST['button_width_' . $i . '_' . $currentViewType], "i"), array($_REQUEST['button_height_' . $i . '_' . $currentViewType], "i"), array($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType . '_custom'], "s")));
+								$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_zoommap_actions (view_id, view_type, action_posx, action_posy, action_width, action_height, action_command) VALUES(?,?,?,?,?,?,?)", array(array($this->viewId, "i"), array($currentViewType->device_id, "i"), array($_REQUEST['button_left_' . $i . '_' . $currentViewType->device_id], "i"), array($_REQUEST['button_top_' . $i . '_' . $currentViewType->device_id], "i"), array($_REQUEST['button_width_' . $i . '_' . $currentViewType->device_id], "i"), array($_REQUEST['button_height_' . $i . '_' . $currentViewType->device_id], "i"), array($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_id . '_custom'], "s")));
 							}
 						}
 					}
 				}
-				$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_zoommap_images (view_id, view_type, image, width, height) VALUES(?,?,?,0,0)", array(array($this->viewId, "i"), array(($currentViewType == "iphone" ? 2 : 1), "i"), array($_REQUEST['picture_name_' . $currentViewType])));
+				$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_zoommap_images (view_id, view_type, image, width, height) VALUES(?,?,?,0,0)", array(array($this->viewId, "i"), array($currentViewType->device_id, "i"), array($_REQUEST['picture_name_' . $currentViewType->device_id])));
 			}
 		}		
 		
@@ -123,7 +123,7 @@ class apdModuleZoomimage extends apdModuleBasicModule
 		$this->createImageTiles();
 		
 		// re-create main xml file and refresh filelist
-		$this->mc->filecreator->createMainXml();
+		$this->mc->filecreator->createGeneralFiles();
 		$configSet = true;
 		include('modules/filemanager.module.php');
 		$fileManagerObj = new apdModuleFilemanager($this->mc);
@@ -146,7 +146,7 @@ class apdModuleZoomimage extends apdModuleBasicModule
 	{
 		$imageFileName = "";
 	
-		$imageQuery = $this->mc->database->query("SELECT A.image, B.view_name, A.view_type FROM " . $this->mc->config['database_pref'] . "concept_zoommap_images AS A, " . $this->mc->config['database_pref'] . "views AS B WHERE A.view_id = ? AND A.view_id = B.view_id", array(array($this->viewId, "i")));
+		$imageQuery = $this->mc->database->query("SELECT A.image, B.view_name, A.view_type, C.device_suffix FROM " . $this->mc->config['database_pref'] . "concept_zoommap_images AS A, " . $this->mc->config['database_pref'] . "views AS B, " . $this->mc->config['database_pref'] . "devices AS C WHERE A.view_id = ? AND A.view_id = B.view_id AND A.view_type = C.device_id", array(array($this->viewId, "i")));
 		foreach($imageQuery->rows as $currentImageFile)
 		{
 			$imageFileName = $currentImageFile->image;
@@ -201,8 +201,8 @@ class apdModuleZoomimage extends apdModuleBasicModule
 								$tileWidth, $tileHeight, $tileWidth, $tileHeight);
 							
 							// Output
-							$outputFileSuffic = (count($imageQuery->rows) == 1 ? '' : ($currentImageFile->view_type == 2 ? '_io' : '_ia'));
-							imagepng($tileImage, $this->mc->config['upload_dir'] . 'root/scrolltiles/' . $destinationFileName . $vertiTile . '_' . $horizTile . $outputFileSuffic . '.png', 9);
+							$outputFileSuffix = (count($imageQuery->rows) == 1 ? '' : ($currentImageFile->device_suffix));
+							imagepng($tileImage, $this->mc->config['upload_dir'] . 'root/scrolltiles/' . $destinationFileName . $vertiTile . '_' . $horizTile . $outputFileSuffix . '.png', 9);
 							imagedestroy($tileImage);
 						}
 					}
@@ -237,7 +237,7 @@ class apdModuleZoomimage extends apdModuleBasicModule
 		*/		
 			
 		$imageFileName = "";
-		$imageQuery = $this->mc->database->query("SELECT A.image, B.view_name, A.view_type FROM " . $this->mc->config['database_pref'] . "concept_zoommap_images AS A, " . $this->mc->config['database_pref'] . "views AS B WHERE A.view_id = ? AND A.view_id = B.view_id", array(array($this->viewId, "i")));
+		$imageQuery = $this->mc->database->query("SELECT A.image, B.view_name, A.view_type, C.device_suffix FROM " . $this->mc->config['database_pref'] . "concept_zoommap_images AS A, " . $this->mc->config['database_pref'] . "views AS B, " . $this->mc->config['database_pref'] . "devices AS C WHERE A.view_id = ? AND A.view_id = B.view_id AND A.view_type = C.device_id", array(array($this->viewId, "i")));
 		foreach($imageQuery->rows as $currentImageFile)
 		{
 			$output = '<?xml version="1.0" encoding="UTF-8"?><xml>';
@@ -266,7 +266,7 @@ class apdModuleZoomimage extends apdModuleBasicModule
 							$tileWidth = min($this->imageTileSize, ($width_orig - ($horizTile * $this->imageTileSize)));
 							$tileHeight = min($this->imageTileSize, ($height_orig - ($vertiTile * $this->imageTileSize)));
 							
-							$output .= '<imagetile src="' . $currentImageFile->view_name . '_tile_' . $vertiTile . '_' . $horizTile .'" posx="' . ($horizTile * $this->imageTileSize) . '" posy="' . ($vertiTile * $this->imageTileSize) . '" width="' . $tileWidth . '" height="' . $tileHeight . '">';
+							$output .= '<imagetile src="' . $currentImageFile->view_name . '_tile_' . $vertiTile . '_' . $horizTile .'.png" posx="' . ($horizTile * $this->imageTileSize) . '" posy="' . ($vertiTile * $this->imageTileSize) . '" width="' . $tileWidth . '" height="' . $tileHeight . '">';
 							
 							$buttonActionQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_zoommap_actions WHERE view_id = ? AND view_type = ?", array(array($this->viewId, "i"), array($currentImageFile->view_type, "i")));
 							foreach($buttonActionQuery->rows as $currentButtonAction)
@@ -354,8 +354,8 @@ class apdModuleZoomimage extends apdModuleBasicModule
 				
 			$output .= '</xml>';
 			
-			$outputFileSuffic = (count($imageQuery->rows) == 1 ? '' : ($currentImageFile->view_type == 2 ? '_io' : '_ia'));
-			$outputFileHandle = fopen($this->mc->config['upload_dir'] . '/root/xml/'. $this->viewDetails->view_name . $outputFileSuffic . '.xml', 'w');
+			$outputFileSuffix = (count($imageQuery->rows) == 1 ? '' : ($currentImageFile->device_suffix));
+			$outputFileHandle = fopen($this->mc->config['upload_dir'] . '/root/xml/'. $this->viewDetails->view_name . $outputFileSuffix . '.xml', 'w');
 			fwrite($outputFileHandle, $output);
 			fclose($outputFileHandle);
 		}

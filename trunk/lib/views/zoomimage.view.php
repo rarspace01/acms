@@ -77,67 +77,23 @@ class apdViewZoomimage extends apdViewBasicModule
 		parent::initTemplate();
 		$this->template = preg_replace('#\{BASIC_INFO\}#si', parent::printTemplate(), $currentTemplate);
 		
-		if(isset($this->viewId) && $this->viewId >= 0)
+		$this->template = $this->mc->devicetypes->viewDeviceTemplates($this->template, $this);
+		
+		preg_match_all('#\{FOR_ZOOMIMAGES(.*?)FOR_ZOOMIMAGES\}#si', $this->template, $forZoomImages);
+		$forZoomImages[0] = "";
+		if($zoomimageFolderHandle = opendir($this->mc->config['upload_dir'] . 'modules/zoomimage/pictures/'))
 		{
-			/*
-			========
-			buttons
-			========
-			*/
-			// get buttons
-			$buttonQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_zoommap_actions WHERE view_id = ? ORDER BY action_posy, action_posx ASC", array(array($this->viewId, "i")));
-			preg_match_all('#\{FOR_BUTTONS_IPHONE(.*?)FOR_BUTTONS_IPHONE\}#si', $this->template, $forButtonsIphone);
-			$forButtonsIphone[0] = "";
-			$forButtonsIpad = "";
-			foreach($buttonQuery->rows as $currentButton)
+			while (false !== ($currentZoomimage = readdir($zoomimageFolderHandle)) )
 			{
-				$currentButtonTpl = preg_replace('#\{BUTTON_X\}#si', $currentButton->action_posx, $forButtonsIphone[1][0]);
-				$currentButtonTpl = preg_replace('#\{BUTTON_Y\}#si', $currentButton->action_posy, $currentButtonTpl);
-				$currentButtonTpl = preg_replace('#\{BUTTON_WIDTH\}#si', $currentButton->action_width, $currentButtonTpl);
-				$currentButtonTpl = preg_replace('#\{BUTTON_HEIGHT\}#si', $currentButton->action_height, $currentButtonTpl);
-				$currentButtonTpl = preg_replace('#\{BUTTON_ACTION\}#si', $currentButton->action_command, $currentButtonTpl);
-				if($currentButton->view_type == 2)
+				if(!preg_match('#^\.|\.\.|/|\\\\$#si', $currentZoomimage))
 				{
-					$forButtonsIphone[0] .= $currentButtonTpl;
-				}
-				else if($currentButton->view_type == 1)
-				{
-					$forButtonsIpad .= $currentButtonTpl;
-				}
-			}
-			$this->template = preg_replace('#\{FOR_BUTTONS_IPHONE(.*?)FOR_BUTTONS_IPHONE\}#si', $forButtonsIphone[0], $this->template);
-			$this->template = preg_replace('#\{FOR_BUTTONS_IPAD(.*?)FOR_BUTTONS_IPAD\}#si', $forButtonsIpad, $this->template);
-			
-			/*
-			=====
-			image
-			=====
-			*/
-			$imageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_zoommap_images WHERE view_id = ?", array(array($this->viewId, "i")));
-			if(count($imageQuery->rows) > 0)
-			{
-				foreach($imageQuery->rows as $currentImageData)
-				{
-					if($currentImageData->view_type == 2)
-					{
-						$this->template = preg_replace('#\{IMAGENAME_IPHONE\}#si', $currentImageData->image, $this->template);
-						$this->template = preg_replace('#\{ON_IMAGE_IPHONE|ON_IMAGE_IPHONE\}#si', '', $this->template);
-					}
-					else if($currentImageData->view_type == 1)
-					{
-						$this->template = preg_replace('#\{IMAGENAME_IPAD\}#si', $currentImageData->image, $this->template);
-						$this->template = preg_replace('#\{ON_IMAGE_IPAD|ON_IMAGE_IPAD\}#si', '', $this->template);
-					}
+					$currentTabIconTpl = preg_replace('#\{IMAGENAME\}#si', $currentZoomimage, $forZoomImages[1][0]);
+					$forZoomImages[0] .= $currentTabIconTpl;
 				}
 			}
 		}
-	
-		$this->template = preg_replace('#\{FOR_BUTTONS_IPHONE(.*?)FOR_BUTTONS_IPHONE\}#si', '', $this->template);
-		$this->template = preg_replace('#\{FOR_BUTTONS_IPAD(.*?)FOR_BUTTONS_IPAD\}#si', '', $this->template);
-		$this->template = preg_replace('#\{ON_IMAGE_IPHONE(.*?)ON_IMAGE_IPHONE\}#si', '', $this->template);
-		$this->template = preg_replace('#\{ON_IMAGE_IPAD(.*?)ON_IMAGE_IPAD\}#si', '', $this->template);
-		$this->template = preg_replace('#\{IMAGENAME_IPHONE\}#si', '', $this->template);
-		$this->template = preg_replace('#\{IMAGENAME_IPAD\}#si', '', $this->template);
+		closedir($zoomimageFolderHandle);
+		$this->template = preg_replace('#\{FOR_ZOOMIMAGES(.*?)FOR_ZOOMIMAGES\}#si', $forZoomImages[0], $this->template);
 		
 		preg_match_all('#\{FOR_VIEWS(.*?)FOR_VIEWS\}#si', $this->template, $forTabViews);
 		$forTabViews[0] = "";
@@ -157,5 +113,67 @@ class apdViewZoomimage extends apdViewBasicModule
 		$this->template = preg_replace('#\{CONFIG_UPLOADDIR\}#si', $this->mc->config['upload_dir'], $this->template);
 		
 		return $this->template;
+	}
+	
+	/**
+	* function - customDeviceTemplate
+	* --
+	* replaces device-specifc and module-specific content
+	* in the current template
+	* --
+	* @param: $template
+	*		template for processing
+	* @param $deviceKey
+	*		key like "iphone" or "ipad"
+	* @param $deviceId
+	*		id (primary key in database)
+	* @return: (String) template
+	*		finished template
+	* --
+	*/
+	function customDeviceTemplate($template, $deviceKey, $deviceId)
+	{
+		/*
+		========
+		buttons
+		========
+		*/
+		// get template for buttons
+		if(preg_match_all('#\{FOR_BUTTONS(.*?)FOR_BUTTONS\}#si', $template, $forButtons) > 0)
+		{
+			// get buttons
+			$buttonQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_zoommap_actions WHERE view_id = ? AND view_type = ? ORDER BY action_posy, action_posx ASC", array(array($this->viewId, "i"), array($deviceId, "i")));
+			$forButtons[0] = "";
+			foreach($buttonQuery->rows as $currentButton)
+			{
+				$currentButtonTpl = preg_replace('#\{BUTTON_X\}#si', $currentButton->action_posx, $forButtons[1][0]);
+				$currentButtonTpl = preg_replace('#\{BUTTON_Y\}#si', $currentButton->action_posy, $currentButtonTpl);
+				$currentButtonTpl = preg_replace('#\{BUTTON_WIDTH\}#si', $currentButton->action_width, $currentButtonTpl);
+				$currentButtonTpl = preg_replace('#\{BUTTON_HEIGHT\}#si', $currentButton->action_height, $currentButtonTpl);
+				$currentButtonTpl = preg_replace('#\{BUTTON_ACTION\}#si', $currentButton->action_command, $currentButtonTpl);
+				$forButtons[0] .= $currentButtonTpl;
+			}
+			$template = preg_replace('#\{FOR_BUTTONS(.*?)FOR_BUTTONS\}#si', $forButtons[0], $template);
+		}
+			
+		/*
+		=====
+		image
+		=====
+		*/
+		$imageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_zoommap_images WHERE view_id = ? AND view_type = ?", array(array($this->viewId, "i"), array($deviceId, "i")));
+		if(count($imageQuery->rows) > 0)
+		{
+			$template = preg_replace('#\{IMAGENAME\}#si', $imageQuery->rows[0]->image, $template);
+			$template = preg_replace('#\{DEVICE_TYPE_EXISTS\}#si', 'true', $template);
+			$template = preg_replace('#\!\{DEVICE_TYPE_EXISTS\}#si', 'false', $template);
+		}
+		else
+		{
+			$template = preg_replace('#\{IMAGENAME\}#si', '', $template);
+			$template = preg_replace('#\{DEVICE_TYPE_EXISTS\}#si', 'false', $template);
+			$template = preg_replace('#\!\{DEVICE_TYPE_EXISTS\}#si', 'true', $template);
+		}
+		return $template;
 	}
 }
