@@ -210,6 +210,7 @@ class apdModuleFilemanager
 		else if($_REQUEST['type'] == 'refreshfilelist')
 		{
 			$this->refreshFilelist();
+			header("Location: index.php?m=filemanager&submit=form&type=filelist");
 		}
 	}
 	
@@ -230,7 +231,8 @@ class apdModuleFilemanager
 		
 		if(count($fileQuery->rows) > 0)
 		{
-			$fileName = $this->mc->config['upload_dir'] . '/root/' . $fileQuery->rows[0]->path . $fileQuery->rows[0]->filename;
+			//$fileName = $this->mc->config['upload_dir'] . '/' . $fileQuery->rows[0]->path . $fileQuery->rows[0]->filename;
+			$fileName = $fileQuery->rows[0]->path . $fileQuery->rows[0]->filename;
 			
 			header('Content-Description: File Transfer');
 			header('Content-Type: application/octet-stream');
@@ -241,8 +243,10 @@ class apdModuleFilemanager
 			header('Pragma: public');
 			header('Content-Length: ' . filesize($fileName));
 			set_time_limit(0);
-			
-			readfile($fileName);	
+			ob_clean();
+			flush();
+			readfile($fileName);
+			exit();
 		}
 		else
 		{
