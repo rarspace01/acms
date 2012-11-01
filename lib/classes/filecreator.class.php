@@ -30,6 +30,22 @@ class apdFileCreator
 	
 	
 	/**
+	* function - createGeneralFiles
+	* --
+	* create all files automatically
+	* --
+	* @param: none
+	* @return:  none
+	* --
+	*/
+	function createGeneralFiles()
+	{
+		$this->createMainXml();
+		$this->createLocalisations();
+	}
+	
+	
+	/**
 	* function - createMainXml
 	* --
 	* @param: none
@@ -81,7 +97,7 @@ class apdFileCreator
 			if($currentView->view_navigationbar == 1)
 				$output .= ' initWithNaviCtrl="true"'; // has a navigation controller?
 			if($currentView->view_tabbar >= 0)
-				$output .= ' tabbar="' . $currentView->view_tabbar . '"'; // initialises a tabbar?
+				$output .= ' tabbarid="' . $currentView->view_tabbar . '"'; // initialises a tabbar?
 			// TODO: background
 			//if($currentView->view_background >= 0)
 			//	$output .= ' tabbar="' . $currentView->view_tabbar . '"'; // has a set background?
@@ -100,6 +116,32 @@ class apdFileCreator
 		fclose($outputFileHandle);
 		
 		return $output;
+	}
+
+	/**
+	* function - createLocalisations
+	* --
+	* create files with localisation strings
+	* --
+	* @param: none
+	* @return: none
+	* --
+	*/
+	function createLocalisations()
+	{
+		$localisationQuery = $this->mc->database->query("SELECT local_id, local_key FROM " . $this->mc->config['database_pref'] . "localisations", array());
+		foreach($localisationQuery->rows as $currentLocale)
+		{
+			$currentLocaleOutput = "";
+			$localStringsQuery = $this->mc->database->query("SELECT local_key, local_value FROM " . $this->mc->config['database_pref'] . "localisation_keys WHERE local_id = ?", array(array($currentLocale->local_id, "i")));
+			foreach($localStringsQuery->rows as $currentLocalString)
+			{
+				$currentLocaleOutput .= '"' . $currentLocalString->local_key . '" = "' . $currentLocalString->local_value . '";' . "\n";
+			}
+			$outputFileHandle = fopen($this->mc->config['upload_dir'] . '/root/' . $currentLocale->local_key . '.lproj/Localizable.strings', 'w');
+			fwrite($outputFileHandle, $currentLocaleOutput);
+			fclose($outputFileHandle);
+		}
 	}
 	
 }

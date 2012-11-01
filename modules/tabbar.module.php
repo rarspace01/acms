@@ -160,7 +160,7 @@ class apdModuleTabBar
 		}
 		
 		// re-create main xml file and refresh filelist
-		$this->mc->filecreator->createMainXml();
+		$this->mc->filecreator->createGeneralFiles();
 		$configSet = true;
 		include('modules/filemanager.module.php');
 		$fileManagerObj = new apdModuleFilemanager($this->mc);

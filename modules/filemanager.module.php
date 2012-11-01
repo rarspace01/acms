@@ -289,7 +289,7 @@ class apdModuleFilemanager
 					$returnFilelist .= "\t</folder>\n";
 				}	
 				//start new folder
-				$returnFilelist .= "\t<folder name=\"" . preg_replace('#' . $this->mc->config['upload_dir'] . '(/?)#si', '', $currentFile->path) . "\">\n";
+				$returnFilelist .= "\t<folder name=\"" . preg_replace('#^' . $this->mc->config['upload_dir'] . '(/*?)#si', '', $currentFile->path) . "\">\n";
 				$lastdir = $currentFile->path;
 			}
 			// file entry

@@ -21,6 +21,7 @@ $configSet = true;
 include('includes/config.php');
 include('lib/classes/apphierarchy.class.php');	// creates the app hierarchy
 include('lib/classes/database.class.php');		// database connection
+include('lib/classes/devicetypes.class.php');	// handling different devicetypes
 include('lib/classes/filecreator.class.php');	// creates the xml-files for output
 include('lib/classes/language.class.php');		// language support
 include('lib/classes/logger.class.php');		// logger
@@ -32,6 +33,7 @@ class adpMainContainer
 {
 	public $appHierarchy;
 	public $database;
+	public $devicetypes;
 	public $filecreator;
 	public $language;
 	public $logger;
@@ -53,6 +55,8 @@ class adpMainContainer
 		$this->appHierarchy	= new apdAppHierarchy($this);
 		// init the database and connect
 		$this->database		= new apdDatabase($this);
+		// handling different devicetypes
+		$this->devicetypes	= new apdDeviceTypes($this);
 		// creates the xml-files for the final app
 		$this->filecreator	= new apdFileCreator($this);
 		// multi language support

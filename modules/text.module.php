@@ -131,7 +131,7 @@ class apdModuleText extends apdModuleBasicModule
 		$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "views SET view_c_type = ? WHERE view_id = ?", array(array($conceptQuery->rows[0]->concept_id, "i"), array($this->viewId, "i")));
 		
 		// re-create main xml file and refresh filelist
-		$this->mc->filecreator->createMainXml();
+		$this->mc->filecreator->createGeneralFiles();
 		$configSet = true;
 		include('modules/filemanager.module.php');
 		$fileManagerObj = new apdModuleFilemanager($this->mc);
