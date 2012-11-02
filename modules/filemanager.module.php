@@ -84,6 +84,10 @@ class apdModuleFilemanager
 			{
 				$this->uploadPath .= 'modules/zoomimage/';
 			}
+			else if($uploadType == 'landingpage')
+			{
+				$this->uploadPath .= 'modules/landingpage/';
+			}
 			else
 			{
 				$this->uploadPath .= 'root/';

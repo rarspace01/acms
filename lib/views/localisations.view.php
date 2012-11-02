@@ -71,68 +71,22 @@ class apdViewLocalisations implements apdIView
 	* --
 	*/
 	function printTemplate()
-	{
-		// default infos
-		$this->template = preg_replace('#\{VIEWID\}#si', $this->tabBarId, $this->template);
-		$this->template = preg_replace('#\{TABBAR_NAME\}#si', $this->tabBarDetails->tabbar_name, $this->template);
+	{		
 		
+		preg_match_all('#\{FOR_LANGUAGES(.*?)FOR_LANGUAGES\}#si', $this->template, $forLanguages);
+		$forLanguages[0] = "";
 		
-		preg_match_all('#\{FOR_VIEWS(.*?)FOR_VIEWS\}#si', $this->template, $forTabViews);
-		$forTabViews[0] = "";
-		
-		// get list of files
-		for($i = 0; $i < count($this->viewList); $i++)
+		$availableLocalisations = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "localisations ORDER BY local_id ASC", array());
+		foreach($availableLocalisations->rows as $currentLocale)
 		{
-			$currentView = $this->viewList[$i];
-			$currentViewTpl = preg_replace('#\{VIEW_ID\}#si', $currentView['view_id'], $forTabViews[1][0]);
-			$currentViewTpl = preg_replace('#\{VIEW_NAME\}#si', $currentView['view_name'], $currentViewTpl);
-			$currentViewTpl = preg_replace('#\{COMMA\}#si', ($i < (count($this->viewList)-1)) ? ',' : '', $currentViewTpl);
+			$currentLanguageTpl = preg_replace('#\{LANGUAGE\}#si', $this->mc->language->getLocalisation($currentLocale->local_name), $forLanguages[1][0]);
+			$currentLanguageTpl = preg_replace('#\{LANGUAGEID\}#si', ($currentLocale->local_id), $currentLanguageTpl);
+			$currentLanguageTpl = preg_replace('#\{LANGUAGEACTIVE\}#si', (($currentLocale->local_active == 1) ? 'checked="checked"' : ''), $currentLanguageTpl);
 				
-			$forTabViews[0] .= $currentViewTpl;
+			$forLanguages[0] .= $currentLanguageTpl;
 		}
-		$this->template = preg_replace('#\{FOR_VIEWS(.*?)FOR_VIEWS\}#si', $forTabViews[0], $this->template);
+		$this->template = preg_replace('#\{FOR_LANGUAGES(.*?)FOR_LANGUAGES\}#si', $forLanguages[0], $this->template);
 		
-		preg_match_all('#\{FOR_TABS(.*?)FOR_TABS\}#si', $this->template, $forTabBarTabs);
-		$forTabBarTabs[0] = "";
-		
-		$maxTabId = 0;
-		if(isset($this->tabs) && is_array($this->tabs))
-		{
-			// insert infos for all tabs
-			foreach($this->tabs as $currentTab)
-			{
-				$maxTabId = max($maxTabId, $currentTab->tab_id);
-				$currentTabTpl = preg_replace('#\{TAB_ID\}#si', $currentTab->tab_id, $forTabBarTabs[1][0]);
-				$currentTabTpl = preg_replace('#\{DEFAULT_TAB\}#si', ($currentTab->tab_default)?'true':'false', $currentTabTpl);
-				$currentTabTpl = preg_replace('#\{TAB_VIEW_ID\}#si', $currentTab->tab_view, $currentTabTpl);
-				$currentTabTpl = preg_replace('#\{TAB_ICON\}#si', $currentTab->tab_icon, $currentTabTpl);
-				$forTabBarTabs[0] .= $currentTabTpl;
-			}
-		}
-		$this->template = preg_replace('#\{FOR_TABS(.*?)FOR_TABS\}#si', $forTabBarTabs[0], $this->template);
-		$this->template = preg_replace('#\{MAXTABID\}#si', $maxTabId, $this->template);
-			
-			
-		preg_match_all('#\{FOR_TABICONS(.*?)FOR_TABICONS\}#si', $this->template, $forTabBarTabIcons);
-		$forTabBarTabIcons[0] = "";
-		if($tabbarIconFolderHandle = opendir("images/tabbar/icons"))
-		{
-			while (false !== ($currentTabIcon = readdir($tabbarIconFolderHandle)) )
-			{
-				if(preg_match('#^(.+?)\.png$#si', $currentTabIcon))
-				{
-					if(!preg_match('#^(.+?)@2x\.png$#si', $currentTabIcon))
-					{
-						$currentTabIconTpl = preg_replace('#\{ICON_NAME\}#si', preg_replace('#^(.+?)\.png$#si', '$1', $currentTabIcon), $forTabBarTabIcons[1][0]);
-						$currentTabIconTpl = preg_replace('#\{ICON_FILENAME\}#si', $currentTabIcon, $currentTabIconTpl);
-						$forTabBarTabIcons[0] .= $currentTabIconTpl;
-					}
-				}
-			}
-		}
-		closedir($tabbarIconFolderHandle);
-		$this->template = preg_replace('#\{FOR_TABICONS(.*?), FOR_TABICONS\}#si', substr($forTabBarTabIcons[0], 0, -2), $this->template);
-	
 		return $this->template;
 	}
 }

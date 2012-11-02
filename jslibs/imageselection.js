@@ -5,12 +5,13 @@
  *
  * requirements:
  * - the original-image has to be located at imageUploadDir + fileNames[0]
- * - the area for the image is called image_edit_area
+ * - the area for the image is called content_edit_area_[DEVICETYPE]
  * - the form has to have the ID imageselection_form
  * - there has to be an input-field picture_name for the imagename
  * - there have to be input-fields for the image-dimensions picture_org_dim_x and picture_org_dim_y
  * - there has to be an input field maxbuttonid for the number of the (last) created action(s)
  * - there has to be an function imageLoaded() which is called when the image has been loaded
+ * - there has to be an function checkDeviceInit() which checks if the tab has been initialised yet
  */
 
 var templatePath = 'templates/default/';
@@ -19,8 +20,10 @@ var previewImageClass = 'previewimage';
 
 var textActionContainer = '';
 var textActionHelpContainer = '';
+var textTitleContainer = '';
 var textViewSelectionDefault = '';
 var textViewSelectionCustom = '';
+var languages = new Array();
 
 var imageUploadDir = 'root/pictures/';
 var imageOriginalHeight = 0;
@@ -34,17 +37,17 @@ var lastMousePosX = 0;
 var lastMousePoxY = 0;
 var currentButtonId = 0;
 
-var currentViewType = 'iphone';
-
 var selectionStarted = false;
 var initPhaseImageSelection = true;
+var lazyInitElements = new Array();
+var defaultTitleValue = false;
 
 function showImageActionSelection(fileNames)
 {
 	emptyQueueAction();
 
 	var currentFileName = document.getElementById('picture_name_' + currentViewType).value;
-	var imageArea = document.getElementById('image_edit_area_' + currentViewType);
+	var imageArea = document.getElementById('content_edit_area_' + currentViewType);
 	var keepCurrentImage = false;
 	if(currentFileName != "")
 	{
@@ -111,7 +114,7 @@ function showImageActionSelection(fileNames)
 
 function startActionSelection(mouseEvent) 
 {
-	var imageEditAreaDiv = document.getElementById('image_edit_area_' + currentViewType);
+	var imageEditAreaDiv = document.getElementById('content_edit_area_' + currentViewType);
 	
 	if (!mouseEvent)
 		mouseEvent = window.event;
@@ -169,7 +172,7 @@ function endActionSelection(mouseEvent)
 		}
 		else
 		{
-			createAction(currentDiv, false, -1);	
+			createAction(currentDiv, false, -1, defaultTitleValue);	
 			currentDiv = null;
 		}
 		
@@ -177,9 +180,9 @@ function endActionSelection(mouseEvent)
 	}
 }
 
-function createAction(divContainer, dimension, command)
+function createAction(divContainer, dimension, command, title)
 {
-	var imageEditAreaDiv = document.getElementById('image_edit_area_' + currentViewType);
+	var imageEditAreaDiv = document.getElementById('content_edit_area_' + currentViewType);
 
 	if(divContainer == null)
 	{
@@ -217,7 +220,7 @@ function createAction(divContainer, dimension, command)
 	removeButton.style.top = Math.floor(parseFloat(divContainer.style.height) / 2) - 8 + 'px';
 	divContainer.appendChild(removeButton);
 		
-	var imageArea = document.getElementById('image_edit_area_' + currentViewType);
+	var imageArea = document.getElementById('content_edit_area_' + currentViewType);
 	
 	var divButtonActionContainer = document.createElement('div');
 	divButtonActionContainer.setAttribute('id', 'button_action_container_' + currentButtonId + '_' + currentViewType);
@@ -235,6 +238,37 @@ function createAction(divContainer, dimension, command)
 	var divButtonActionHelp = document.createElement('div');
 	divButtonActionHelp.setAttribute('class', 'content_form_details');
 	divButtonActionHelp.appendChild(document.createTextNode(textActionHelpContainer));
+	
+	divButtonActionContainer.appendChild(divButtonActionText);
+	divButtonActionContainer.appendChild(divButtonActionInput);
+	divButtonActionContainer.appendChild(divButtonActionHelp);
+	
+	if(title != false)
+	{
+		for(var i = 0; i < languages.length; i++)
+		{
+			var divButtonTitleText = document.createElement('div');
+			divButtonTitleText.setAttribute('class', 'content_form_text');
+			divButtonTitleText.appendChild(document.createTextNode('(' + currentButtonId + ') ' + textTitleContainer + ': (' + languages[i]["name"] + ')'));
+			
+			var divButtonTitleInput = document.createElement('div');
+			divButtonTitleInput.setAttribute('class', 'content_form_input');
+			var divButtonTitleInputField = document.createElement('input');
+			divButtonTitleInputField.setAttribute('class', 'content_form_input_field');
+			divButtonTitleInputField.setAttribute('type', 'text');
+			divButtonTitleInputField.setAttribute('name', 'landingpage_view_' + currentButtonId + '_' + currentViewType + '_' + languages[i]["id"]);
+			divButtonTitleInputField.setAttribute('value', title[i]);
+			divButtonTitleInput.appendChild(divButtonTitleInputField);
+			
+			var divButtonTitleHelp = document.createElement('div');
+			divButtonTitleHelp.setAttribute('class', 'content_form_details');
+			divButtonTitleHelp.appendChild(document.createTextNode(textActionHelpContainer));
+			
+			divButtonActionContainer.appendChild(divButtonTitleText);
+			divButtonActionContainer.appendChild(divButtonTitleInput);
+			divButtonActionContainer.appendChild(divButtonTitleHelp);
+		}
+	}
 	
 	var hiddenInputButtonTop = document.createElement('input');
 	hiddenInputButtonTop.setAttribute('type', 'hidden');
@@ -258,16 +292,12 @@ function createAction(divContainer, dimension, command)
 	divButtonActionContainer.appendChild(hiddenInputButtonHeight);
 	divButtonActionContainer.appendChild(hiddenInputButtonWidth);
 	
-	divButtonActionContainer.appendChild(divButtonActionText);
-	divButtonActionContainer.appendChild(divButtonActionInput);
-	divButtonActionContainer.appendChild(divButtonActionHelp);
-	
 	imageArea.appendChild(divButtonActionContainer);
 }
 
 function removeAction(actionId)
 {
-	var imageEditAreaDiv = document.getElementById('image_edit_area_' + currentViewType);
+	var imageEditAreaDiv = document.getElementById('content_edit_area_' + currentViewType);
 	
 	imageEditAreaDiv.removeChild(document.getElementById('action_container_' + actionId + '_' + currentViewType));
 	if(document.getElementById('button_action_container_' + actionId + '_' + currentViewType) != null)
@@ -322,5 +352,31 @@ function highlightAction(actionId, highlight)
 		container.style.border = '1px solid black';
 		container.style.top = parseFloat(container.style.top) + 3 + 'px';
 		container.style.left = parseFloat(container.style.left) + 3 + 'px';
+	}
+}
+
+function lazyInitZoomimages(firstStart)
+{
+	if(lazyInitElements.length > 0)
+	{
+		if(firstStart)
+		{
+			var formElement = document.getElementById('imageselection_form');
+			formElement.style.display = 'block';
+			var loadingIndicator = new Image();
+			loadingIndicator.src = templatePath + 'grafix/loading_indicator.gif';
+			loadingIndicator.style.position = 'absolute';
+			loadingIndicator.style.top = (getAbsoluteTopPos(formElement) + 50) + 'px';
+			loadingIndicator.style.left = (getAbsoluteLeftPos(formElement) + 200) + 'px';
+			loadingIndicator.setAttribute('id', 'loading_indicator');
+			formElement.parentNode.insertBefore(loadingIndicator, formElement);
+			formElement.style.visibility = 'hidden';
+		}
+		
+		var deviceType = lazyInitElements.pop();
+		if(!checkDeviceInit(deviceType))
+		{
+			changeTab(deviceType);
+		}
 	}
 }

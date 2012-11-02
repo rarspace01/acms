@@ -83,7 +83,7 @@ class apdViewList extends apdViewBasicModule
 		=============
 		*/		
 		// load all languages from database, these are the columns in the language-table
-		$languageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "localisations WHERE local_active = 1", array());		
+		$languageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "localisations WHERE local_active = 1 ORDER BY local_id ASC", array());		
 		preg_match_all('#\{FOR_LANGUAGES(.*?)FOR_LANGUAGES\}#si', $this->template, $forLanguages);
 		$forLanguages[0] = "";
 		
