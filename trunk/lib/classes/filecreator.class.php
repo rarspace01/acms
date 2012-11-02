@@ -98,12 +98,10 @@ class apdFileCreator
 				$output .= ' initWithNaviCtrl="true"'; // has a navigation controller?
 			if($currentView->view_tabbar >= 0)
 				$output .= ' tabbarid="' . $currentView->view_tabbar . '"'; // initialises a tabbar?
-			// TODO: background
-			//if($currentView->view_background >= 0)
-			//	$output .= ' tabbar="' . $currentView->view_tabbar . '"'; // has a set background?
+			if($currentView->view_background != '' && $currentView->view_background != null)
+				$output .= ' background="' . $currentView->view_background . '"'; // has a set background?
 			$output .= '>';
 				// view information
-				// TODO: action xml file
 				$output .= '<view type="' . $currentView->concept_view . '" action="' . $currentView->view_action . '" />';
 			$output .= '</page>';
 		}

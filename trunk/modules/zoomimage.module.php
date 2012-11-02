@@ -73,11 +73,11 @@ class apdModuleZoomimage extends apdModuleBasicModule
 		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "concept_zoommap_images WHERE view_id = ?", array(array($this->viewId, "i")));
 		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "concept_zoommap_actions WHERE view_id = ?", array(array($this->viewId, "i")));
 				
-		$buttonCounter = 0; // "nice" button counter, do not allow gaps
 		// go through list of sections
 		$viewTypesQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "devices", array());
 		foreach($viewTypesQuery->rows as $currentViewType)
 		{
+			$buttonCounter = 0; // "nice" button counter, do not allow gaps
 			if(trim($_REQUEST['picture_name_' . $currentViewType->device_id]) != '')
 			{
 				for($i = 1; $i <= $_REQUEST['maxbuttonid_' . $currentViewType->device_id]; $i++)
