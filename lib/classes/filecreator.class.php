@@ -127,7 +127,7 @@ class apdFileCreator
 	*/
 	function createLocalisations()
 	{
-		$localisationQuery = $this->mc->database->query("SELECT local_id, local_key FROM " . $this->mc->config['database_pref'] . "localisations", array());
+		$localisationQuery = $this->mc->database->query("SELECT local_id, local_key FROM " . $this->mc->config['database_pref'] . "localisations WHERE local_active = 1", array());
 		foreach($localisationQuery->rows as $currentLocale)
 		{
 			$currentLocaleOutput = "";
@@ -136,7 +136,7 @@ class apdFileCreator
 			{
 				$currentLocaleOutput .= '"' . $currentLocalString->local_key . '" = "' . $currentLocalString->local_value . '";' . "\n";
 			}
-			$outputFileHandle = fopen($this->mc->config['upload_dir'] . '/root/' . $currentLocale->local_key . '.lproj/Localizable.strings', 'w');
+			$outputFileHandle = fopen($this->mc->config['upload_dir'] . '/root/' . $currentLocale->local_key . '.lproj/Localizable.strings', 'wb');
 			fwrite($outputFileHandle, $currentLocaleOutput);
 			fclose($outputFileHandle);
 		}

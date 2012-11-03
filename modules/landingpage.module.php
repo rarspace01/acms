@@ -121,10 +121,11 @@ class apdModuleLandingpage extends apdModuleBasicModule
 		
 		// update concept type id for this view
 		$conceptQuery = $this->mc->database->query("SELECT concept_id FROM " . $this->mc->config['database_pref'] . "concepts WHERE concept_key = 'landingpage'", array());
-		$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "views SET view_c_type = ? WHERE view_id = ?", array(array($conceptQuery->rows[0]->concept_id, "i"), array($this->viewId, "i")));
+		$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "views SET view_c_type = ?, view_background = ? WHERE view_id = ?", array(array($conceptQuery->rows[0]->concept_id, "i"), array($this->viewDetails->view_name . '.png'), array($this->viewId, "i")));
 		
-		$this->createXmlFile();
+		$this->cleanUpDirectory();
 		$this->createBackgroundImages();
+		$this->createXmlFile();
 		
 		// re-create main xml file and refresh filelist
 		$this->mc->filecreator->createGeneralFiles();
@@ -133,7 +134,7 @@ class apdModuleLandingpage extends apdModuleBasicModule
 		$fileManagerObj = new apdModuleFilemanager($this->mc);
 		$fileManagerObj->refreshFilelist();
 		
-		//header("Location: index.php?m=landingpage&view_id=" . $this->viewId);
+		header("Location: index.php?m=landingpage&view_id=" . $this->viewId);
 	}
 	
 	/**
@@ -150,7 +151,7 @@ class apdModuleLandingpage extends apdModuleBasicModule
 	{
 		$imageFileName = "";
 	
-		$imageQuery = $this->mc->database->query("SELECT A.image, B.view_name, A.view_type, C.device_suffix FROM " . $this->mc->config['database_pref'] . "concept_landingpage_images AS A, " . $this->mc->config['database_pref'] . "views AS B, " . $this->mc->config['database_pref'] . "devices AS C WHERE A.view_id = ? AND A.view_id = B.view_id AND A.view_type = C.device_id", array(array($this->viewId, "i")));
+		$imageQuery = $this->mc->database->query("SELECT A.image, B.view_name, A.view_type, C.device_suffix, C.device_key FROM " . $this->mc->config['database_pref'] . "concept_landingpage_images AS A, " . $this->mc->config['database_pref'] . "views AS B, " . $this->mc->config['database_pref'] . "devices AS C WHERE A.view_id = ? AND A.view_id = B.view_id AND A.view_type = C.device_id", array(array($this->viewId, "i")));
 		foreach($imageQuery->rows as $currentImageFile)
 		{
 			$imageFileName = $currentImageFile->image;
@@ -165,8 +166,7 @@ class apdModuleLandingpage extends apdModuleBasicModule
 				// Get new dimensions
 				list($width_orig, $height_orig) = getimagesize($filePath);
 				if($width_orig > 0 && $height_orig > 0)
-				{
-				
+				{				
 					$image = null;
 					if($format == 'jpg' || $format == 'jpeg')
 					{
@@ -179,13 +179,17 @@ class apdModuleLandingpage extends apdModuleBasicModule
 					else
 						return false;
 						
-					$destinationFileName = $currentImageFile->view_name;
+					$destinationFileName = $currentImageFile->view_name . '_background';
 					
 					// device-specific heights
 					// will be "streched" on device probably, with tabbar and navigationbar
 					// optimised image-size for retina
 					$resizedWidth = ($currentImageFile->view_type == 2 ? 640 : 2048);
 					$resizedHeight = ($currentImageFile->view_type == 2 ? 960 : 1536);
+					
+					$scaleDeviceWidth = ($currentImageFile->view_type == 2 ? 320 : 1024);
+					$this->scale[$currentImageFile->device_key] = $scaleDeviceWidth / $_REQUEST['picture_org_dim_x_' . $currentImageFile->device_key];
+					
 					// Resample
 					$resizedImage = imagecreatetruecolor($resizedWidth, $resizedHeight);
 					// make image transparent
@@ -203,7 +207,7 @@ class apdModuleLandingpage extends apdModuleBasicModule
 							
 					// Output
 					$outputFileSuffix = (count($imageQuery->rows) == 1 ? '' : ($currentImageFile->device_suffix));
-					imagepng($resizedImage, $this->mc->config['upload_dir'] . 'root/pictures/' . $destinationFileName . $outputFileSuffix . '.png', 9);
+					imagepng($resizedImage, $this->mc->config['upload_dir'] . 'root/pictures/' . $destinationFileName . $outputFileSuffix . '.png', 7);
 					imagedestroy($resizedImage);
 					
 					imagedestroy($image);
@@ -225,7 +229,7 @@ class apdModuleLandingpage extends apdModuleBasicModule
 	* --
 	*/
 	function createXmlFile()
-	{		
+	{
 		/*
 		<?xml version="1.0" encoding="UTF-8"?>
 		<!-- buttonmenu -->
@@ -244,17 +248,17 @@ class apdModuleLandingpage extends apdModuleBasicModule
 				// check if buttonaction is suitable for this current tile
 								
 				$output .= '<button';
-				$output .= ' posx="' . ($this->scale($currentButtonAction->action_posx)) . '"';
-				$output .= ' posy="' . ($this->scale($currentButtonAction->action_posy)) . '"';
-				$output .= ' height="' . ($this->scale($currentButtonAction->action_height)) . '"';
-				$output .= ' width="' . ($this->scale($currentButtonAction->action_width)) . '"';
+				$output .= ' posx="' . ($this->scale($currentButtonAction->action_posx, $currentDeviceType->device_key)) . '"';
+				$output .= ' posy="' . ($this->scale($currentButtonAction->action_posy, $currentDeviceType->device_key)) . '"';
+				$output .= ' height="' . ($this->scale($currentButtonAction->action_height, $currentDeviceType->device_key)) . '"';
+				$output .= ' width="' . ($this->scale($currentButtonAction->action_width, $currentDeviceType->device_key)) . '"';
 				$output .= ' title="' . $currentButtonAction->action_title . '"';
 				
 				if(is_numeric($currentButtonAction->action_command))
 				{
 					$actionViewQuery = $this->mc->database->query("SELECT view_name FROM " . $this->mc->config['database_pref'] . "views WHERE view_id = ?", array(array($currentButtonAction->action_command, "i")));
 					if(count($actionViewQuery->rows) > 0)
-						$output .= ' action="loadPage::' . $actionViewQuery->view_name . "&amp;YES\" />\n";
+						$output .= ' action="loadPage::' . $actionViewQuery->rows[0]->view_name . "&amp;YES\" />\n";
 				}
 				else
 				{
@@ -268,7 +272,7 @@ class apdModuleLandingpage extends apdModuleBasicModule
 			{
 				$imageQuery = $this->mc->database->query("SELECT image FROM " . $this->mc->config['database_pref'] . "concept_landingpage_images  WHERE view_id = ?", array(array($this->viewId, "i")));
 				$outputFileSuffix = (count($imageQuery->rows) == 1 ? '' : ($currentDeviceType->device_suffix));
-				$outputFileHandle = fopen($this->mc->config['upload_dir'] . '/root/xml/'. $this->viewDetails->view_name . $outputFileSuffix . '.xml', 'w');
+				$outputFileHandle = fopen($this->mc->config['upload_dir'] . '/root/xml/'. $this->viewDetails->view_name . $outputFileSuffix . '.xml', 'wb');
 				fwrite($outputFileHandle, $output);
 				fclose($outputFileHandle);
 			}
@@ -276,8 +280,25 @@ class apdModuleLandingpage extends apdModuleBasicModule
 		return true;
 	}
 	
-	function scale($dimension)
+	function scale($dimension, $device)
 	{
-		return floor($dimension * $this->scale);
+		return floor($dimension * $this->scale[$device]);
+	}
+	
+	function cleanUpDirectory()
+	{
+		parent::cleanUpDirectory();
+		$filePath = $this->mc->config['upload_dir'] . 'root/pictures/';
+		if($landingpageFolderHandle = opendir($filePath))
+		{
+			while (false !== ($currentPictureFile = readdir($landingpageFolderHandle)) )
+			{
+				if(preg_match('#^' . $this->viewDetails->view_name . '_background(.*?)#si', $currentPictureFile))
+				{
+					unlink($filePath . $currentPictureFile);
+				}
+			}
+		}
+		closedir($landingpageFolderHandle);
 	}
 }

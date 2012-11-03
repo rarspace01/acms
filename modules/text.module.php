@@ -94,18 +94,27 @@ class apdModuleText extends apdModuleBasicModule
 		$availableLanguageQuery = $this->mc->database->query("SELECT local_id, local_key FROM " . $this->mc->config['database_pref'] . "localisations", array());
 		foreach($availableLanguageQuery->rows as $availableLanguage)
 		{
-			$currentLanguageOutput = preg_replace('#\{CONTENT\}#si', $_REQUEST['content_' . $availableLanguage->local_id], $textOutputTemplateIphone);
-			$outputFileHandle = fopen($this->mc->config['upload_dir'] . '/root/' . $availableLanguage->local_key . '.lproj/' . $this->viewDetails->view_name . '_io.html', 'w');
+			$currentContent = $_REQUEST['content_' . $availableLanguage->local_id];
+			if(get_magic_quotes_gpc())
+			{
+				$currentContent = preg_replace('#\\\\(\'|")#si', '$1', $currentContent);
+			}
+			if (mb_detect_encoding($currentContent, 'UTF-8', true) === FALSE)
+			{
+				$currentContent = utf8_encode($currentContent);
+			}
+			$currentLanguageOutput = preg_replace('#\{CONTENT\}#si', $currentContent, $textOutputTemplateIphone);
+			$outputFileHandle = fopen($this->mc->config['upload_dir'] . '/root/' . $availableLanguage->local_key . '.lproj/' . $this->viewDetails->view_name . '_io.html', 'wb');
 			fwrite($outputFileHandle, $currentLanguageOutput);
 			fclose($outputFileHandle);
 			
-			$currentLanguageOutput = preg_replace('#\{CONTENT\}#si', $_REQUEST['content_' . $availableLanguage->local_id], $textOutputTemplateIpad);
-			$outputFileHandle = fopen($this->mc->config['upload_dir'] . '/root/' . $availableLanguage->local_key . '.lproj/' . $this->viewDetails->view_name . '_ia.html', 'w');
+			$currentLanguageOutput = preg_replace('#\{CONTENT\}#si', $currentContent, $textOutputTemplateIpad);
+			$outputFileHandle = fopen($this->mc->config['upload_dir'] . '/root/' . $availableLanguage->local_key . '.lproj/' . $this->viewDetails->view_name . '_ia.html', 'wb');
 			fwrite($outputFileHandle, $currentLanguageOutput);
 			fclose($outputFileHandle);
 		
 			// for every language, create an entry in _concept_text for the html-text
-			$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "concept_text SET content = ? WHERE view_id = ? AND language = ?", array(array($_REQUEST['content_' . $availableLanguage->local_id]), array($this->viewId, "i"), array($availableLanguage->local_id, "i")));
+			$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "concept_text SET content = ? WHERE view_id = ? AND language = ?", array(array($currentContent), array($this->viewId, "i"), array($availableLanguage->local_id, "i")));
 			
 			// now search for a regular expression with loadPage::XXXX
 			preg_match_all('#(?:(?:<a)|(?:<script))(?:.+?)loadPage::(.+?)["\'&> ;\r\n](?:.*?)(?:(?:</a>)|(?:</script>))#si', $_REQUEST['content_' . $availableLanguage->local_id], $allOutgoingLinks, PREG_SET_ORDER);

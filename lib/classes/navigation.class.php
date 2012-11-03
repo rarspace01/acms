@@ -184,12 +184,12 @@ class apdNavigation
 			// css class definition
 			$itemTemplate = preg_replace('#\{ITEM_STYLE_TYPE\}#si', 'navigationbar', $itemTemplate);
 			// javascript DOM id
-			$itemTemplate = preg_replace('#\{ITEM_CHILDREN_ID\}#si', 'navigationbar_' . $viewsArray['view_children']['view_id'] . '_children', $itemTemplate);
+			$itemTemplate = preg_replace('#\{ITEM_CHILDREN_ID\}#si', 'navigationbar_' . $viewsArray['view_children'][0]['view_id'] . '_children', $itemTemplate);
 			$itemTemplate = preg_replace('#\{UNIQUE\}#si', uniqid(), $itemTemplate);
 			// item-id, for GET parameter (edit link)
-			$itemTemplate = preg_replace('#\{ITEM_ID\}#si', $viewsArray['view_children']['view_id'], $itemTemplate);
+			$itemTemplate = preg_replace('#\{ITEM_ID\}#si', $viewsArray['view_children'][0]['view_id'], $itemTemplate);
 			// load concept from database
-			$conceptViewQuery = $this->mc->database->query("SELECT concept_key FROM " . $this->mc->config['database_pref'] . "concepts WHERE concept_id = ?", array(array($viewsArray['view_children']['view_type'], "i")));
+			$conceptViewQuery = $this->mc->database->query("SELECT concept_key FROM " . $this->mc->config['database_pref'] . "concepts WHERE concept_id = ?", array(array($viewsArray['view_children'][0]['view_type'], "i")));
 			// insert concept type (GET parameter for edit link)
 			$itemTemplate = preg_replace('#\{ITEM_CONCEPT_TYPE\}#si', $conceptViewQuery->rows[0]->concept_key, $itemTemplate);
 			// name, equals type (no special name for navigationbars)
@@ -209,7 +209,7 @@ class apdNavigation
 			=================================
 			*/
 			$originalTemplate = preg_replace('#\n\t#si', "\n				", $originalTemplate);
-			$itemTemplate = preg_replace('#\{ITEM_CHILDREN\}#si', $this->createViewHierarchy($viewsArray['view_children'], $originalTemplate), $itemTemplate);
+			$itemTemplate = preg_replace('#\{ITEM_CHILDREN\}#si', $this->createViewHierarchy($viewsArray['view_children'][0], $originalTemplate), $itemTemplate);
 			$itemTemplate = preg_replace('#\{NO_LEAF|NO_LEAF\}#si', '', $itemTemplate);
 			$itemTemplate = preg_replace('#\{ITEM_LEAF\}#si', '', $itemTemplate);
 		}

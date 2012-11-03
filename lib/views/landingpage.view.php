@@ -136,8 +136,6 @@ class apdViewLandingpage extends apdViewBasicModule
 		}
 		$this->template = preg_replace('#\{FOR_VIEWS(.*?)FOR_VIEWS\}#si', $forTabViews[0], $this->template);
 		
-		$this->template = preg_replace('#\{CONFIG_UPLOADDIR\}#si', $this->mc->config['upload_dir'], $this->template);
-		
 		return $this->template;
 	}
 	

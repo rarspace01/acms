@@ -123,6 +123,15 @@ class apdModuleTabBar
 					// check if this tab is set to default tab
 					if(isset($_REQUEST['tabbar_view_default_' .$frontIdCount]) && $_REQUEST['tabbar_view_default_' .$frontIdCount] == 'front')
 						$defaultTab = $dataIdCount;
+					
+						$tabbarIconPath = pathinfo($_REQUEST['tabbar_icon_' . $frontIdCount]);
+						$retinaTabbarIcon = $tabbarIconPath["filename"] . "@2x." . $tabbarIconPath["extension"];
+						@copy('images/tabbar/icons/' . $_REQUEST['tabbar_icon_' . $frontIdCount], $this->mc->config['upload_dir'] . '/root/tabbar/' . $_REQUEST['tabbar_icon_' .$frontIdCount]);
+						if(file_exists('images/tabbar/icons/' . $retinaTabbarIcon))
+						{
+							@copy('images/tabbar/icons/' . $retinaTabbarIcon, $this->mc->config['upload_dir'] . '/root/tabbar/' . $retinaTabbarIcon);
+						}
+						
 					// increment ID
 					$dataIdCount++;
 				}
