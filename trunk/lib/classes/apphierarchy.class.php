@@ -214,7 +214,7 @@ class apdAppHierarchy
 			$newParentView['view_type'] = 'navigation';
 			$newParentView['view_id'] = -1;
 			$newParentView['view_name'] = '';
-			$newParentView['view_children'] = $returnArray;
+			$newParentView['view_children'][] = $returnArray;
 			$returnArray = $newParentView;
 		}
 		
@@ -243,14 +243,16 @@ class apdAppHierarchy
 		======================
 		*/
 		if($searchArray == "initialise")
-		{
+		{			
 			// check for view occurence in ACTIVE (pseudo)tabbars
 			foreach($this->activeTabbars as $activeTabbar)
 			{
 				foreach($activeTabbar['tabs'] as $activeTabViews)
 				{
 					if(!$this->isInactiveView($viewId, $activeTabViews['views']))
+					{
 						return false;
+					}
 				}
 			}
 			// check for view occurence in INACTIVE (pseudo)tabbars
@@ -262,6 +264,10 @@ class apdAppHierarchy
 						return false;
 				}
 			}
+			
+			// case with no tabbars at all
+			//return !($this->checkForParentsPath($viewId));
+			
 			// trivial case: if not yet occured and no inactive views yet,
 			// it is an inactive view
 			if(count($this->inactiveViews) == 0)
@@ -269,8 +275,11 @@ class apdAppHierarchy
 			// otherwise go through list of pseudo-tabbars for inactive views
 			foreach($this->inactiveViews as $inactiveViewPseudoTabbars)
 			{
-				if(!$this->isInactiveView($viewId, $inactiveViewPseudoTabbars['tabs'][0]['views']))
-					return false;
+				foreach($inactiveViewPseudoTabbars['tabs'] as $inactiveTabViews)
+				{
+					if(!$this->isInactiveView($viewId, $inactiveTabViews['views']))
+						return false;
+				}
 			}
 			// if we got til here, it is an inactive view
 			return true;
@@ -281,21 +290,65 @@ class apdAppHierarchy
 		case 2: view hierarchy
 		======================
 		*/
+		if($searchArray == null)
+			return true;
+		
 		// view found, not inactive!
 		if($searchArray['view_id'] == $viewId)
+		{
 			return false;
+		}
 		// we hit the bottom, view not found
 		if(!isset($searchArray['view_children']) || count($searchArray['view_children']) == 0)
+		{
 			return true;
+		}
 	
-		$result = false;
+		$result = true;
 		foreach($searchArray['view_children'] as $currentChild)
 		{
-			// otherwise, search deeper
-			if($this->isInactiveView($viewId, $currentChild))
-				return true;
+			if(is_array($currentChild))
+			{
+				// otherwise, search deeper
+				if(!$this->isInactiveView($viewId, $currentChild))
+				{	
+					return false;
+				}
+			}
 		}
-		return false;
+		return true;
+	}
+	
+		/**
+	* function - checkForParentsPath
+	* --
+	* checks if there exists a path from the current view
+	* to the starting page. Used for checking if a tabbar is
+	* (still) active
+	* --
+	* @param: $currentDestinationView - the current view to check
+	* @return: (boolean)
+			does a path exist?
+	* --
+	*/
+	function checkForParentsPath($currentDestinationView)
+	{
+		$viewParentsQuery = $this->mc->database->query("SELECT A.view_id_parent AS parent_id, B.view_start AS start FROM " . $this->mc->config['database_pref'] . "view_links AS A, " . $this->mc->config['database_pref'] . "views AS B WHERE A.view_id_destination = ? AND A.view_id_parent = B.view_id", array(array($currentDestinationView, "i")));
+	
+		// if current view does not have any parents its a dead end
+		if(count($viewParentsQuery->rows) == 0)
+			return false;
+			
+		// otherwise check for parents
+		foreach($viewParentsQuery->rows as $viewParent)
+		{
+			// case 1: this parent is the starting page
+			if($viewParent->start == 1)
+				return true;
+				
+			// otherwise, search recursively
+			return checkForParentsPath($viewParent->parent_id);
+		}
 	}
 }
 

@@ -71,7 +71,7 @@ class apdModuleList extends apdModuleBasicModule
 		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "localisation_keys WHERE local_key LIKE ?", array(array('list_section_' . $this->viewId . '_%')));
 		
 		// go through list of languages
-		$availableLanguageQuery = $this->mc->database->query("SELECT local_id FROM " . $this->mc->config['database_pref'] . "localisations", array());
+		$availableLanguageQuery = $this->mc->database->query("SELECT local_id FROM " . $this->mc->config['database_pref'] . "localisations WHERE local_active = 1", array());
 		
 		$sectionCounter = 0; // "nice" section counter, do not allow gaps
 		// go through list of sections

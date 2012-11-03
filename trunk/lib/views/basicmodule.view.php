@@ -79,13 +79,38 @@ class apdViewBasicModule implements apdIView
 			// insert known view-id for this view
 			$this->template = preg_replace('#\{VIEWID\}#si', $this->viewDetails->view_id, $this->template);
 			$this->template = preg_replace('#\{VIEWNAME\}#si', $this->viewDetails->view_name, $this->template);
+			$this->template = preg_replace('#\{CURRENT_BACKGROUND\}#si', $this->viewDetails->view_background, $this->template);
 		}
 		else
 		{
 			// otherwise this is a new creation of a view
 			$this->template = preg_replace('#\{VIEWID\}#si', -1, $this->template);
 			$this->template = preg_replace('#\{VIEWNAME\}#si', '', $this->template);
+			$this->template = preg_replace('#\{CURRENT_BACKGROUND\}#si', '', $this->template);
 		}
+		
+		
+		preg_match_all('#\{FOR_BACKGROUNDS(.*?)FOR_BACKGROUNDS\}#si', $this->template, $forBackgrounds);
+		$forBackgrounds[0] = "";
+		$pictureFolderPath = $this->mc->config['upload_dir'] . 'root/pictures/';
+		if($pictureFolderHandle = opendir($pictureFolderPath))
+		{
+			while (false !== ($currentPicture = readdir($pictureFolderHandle)) )
+			{
+				if(!preg_match('#^\.|\.\.|/+|\\\\+$#si', $currentPicture))
+				{
+					list($bgImgWidth, $bgImgHeight) = getimagesize($pictureFolderPath . $currentPicture);
+					if($bgImgWidth >= 320 && $bgImgHeight >= 440)
+					{
+						$currentBackgroundTpl = preg_replace('#\{BACKGROUNDIMAGE\}#si', $currentPicture, $forBackgrounds[1][0]);
+						$currentBackgroundTpl = preg_replace('#\{ONSELECTED(.*?)ONSELECTED\}#si', (($this->viewId >= 0 && $this->viewDetails->view_background == $currentPicture) ? '$1' : ''), $currentBackgroundTpl);
+						$forBackgrounds[0] .= $currentBackgroundTpl;
+					}
+				}
+			}
+		}
+		closedir($pictureFolderHandle);
+		$this->template = preg_replace('#\{FOR_BACKGROUNDS(.*?)FOR_BACKGROUNDS\}#si', $forBackgrounds[0], $this->template);
 		
 		// get template-snippet for tabbar-dropdown menu
 		preg_match_all('#\{FOR_TABBARS(.*?)FOR_TABBARS\}#si', $this->template, $forTabbars);
@@ -153,6 +178,8 @@ class apdViewBasicModule implements apdIView
 		}
 		
 		$this->template = preg_replace('#\{FOR_LANGUAGES_BASIC(.*?)FOR_LANGUAGES_BASIC\}#si', $forLanguagesBasic[0], $this->template);
+	
+		$this->template = preg_replace('#\{CONFIG_UPLOADDIR\}#si', $this->mc->config['upload_dir'], $this->template);
 	
 		return $this->template;
 	}

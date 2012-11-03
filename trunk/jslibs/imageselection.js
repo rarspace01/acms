@@ -48,6 +48,7 @@ function showImageActionSelection(fileNames)
 
 	var currentFileName = document.getElementById('picture_name_' + currentViewType).value;
 	var imageArea = document.getElementById('content_edit_area_' + currentViewType);
+	imageArea.style.display = 'block';
 	var keepCurrentImage = false;
 	if(currentFileName != "")
 	{

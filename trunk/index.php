@@ -116,6 +116,14 @@ if(isset($_REQUEST['submit']) && $_REQUEST['submit'] == 'form')
 	// needs a merge with "filemanager" here...
 }
 
+/*
+==========================
+create the navigation menu
+==========================
+*/
+$mainContainer->template->template = preg_replace('#\{NAVIGATION\}#si', $mainContainer->navigation->createStructureOutput(), $mainContainer->template->template);
+$mainContainer->template->navigationLoaded = true;
+
 
 /*
 =============
@@ -130,14 +138,6 @@ if(function_exists('initCurrentView'))
 	$mainContainer->template->template = preg_replace('#\{CONTENT\}#si', $currentViewModule->printTemplate(), $mainContainer->template->template);
 
 }
-
-/*
-==========================
-create the navigation menu
-==========================
-*/
-$mainContainer->template->template = preg_replace('#\{NAVIGATION\}#si', $mainContainer->navigation->createStructureOutput(), $mainContainer->template->template);
-$mainContainer->template->navigationLoaded = true;
 
 // prepare the template for presentation
 echo $mainContainer->template->prepareTemplate();
