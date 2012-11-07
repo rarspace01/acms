@@ -102,7 +102,9 @@ class apdViewBasicModule implements apdIView
 					list($bgImgWidth, $bgImgHeight) = getimagesize($pictureFolderPath . $currentPicture);
 					if($bgImgWidth >= 320 && $bgImgHeight >= 440)
 					{
+						$backgroundImagePlain = preg_replace('#^(.+?)_(?:[a-zA-z]{2})\.([a-zA-Z]+?)$#si', '$1.$2', $currentPicture);
 						$currentBackgroundTpl = preg_replace('#\{BACKGROUNDIMAGE\}#si', $currentPicture, $forBackgrounds[1][0]);
+						$currentBackgroundTpl = preg_replace('#\{BACKGROUNDIMAGEPLAIN\}#si', $backgroundImagePlain, $currentBackgroundTpl);
 						$currentBackgroundTpl = preg_replace('#\{ONSELECTED(.*?)ONSELECTED\}#si', (($this->viewId >= 0 && $this->viewDetails->view_background == $currentPicture) ? '$1' : ''), $currentBackgroundTpl);
 						$forBackgrounds[0] .= $currentBackgroundTpl;
 					}
