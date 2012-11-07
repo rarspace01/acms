@@ -7,6 +7,8 @@
  */
  
  var emptyQueueAction;
+ var fileList;
+ var currentUploadFileName;
 
 (function($)
 {
@@ -504,8 +506,13 @@
 				name	= arr[i].value.replace(/^.*\\/, '');
 				size	= 0;
 			}
-			ext	= name.split('.').pop().toLowerCase();
-						
+			if(currentUploadFileName != false && currentUploadFileName != '')
+			{
+				name = currentUploadFileName;
+				currentUploadFileName = false;
+			}
+			ext	= name.split('.').pop().toLowerCase();	
+			
 			if(FILES.length < settings.maxFiles && ($.inArray(ext, settings.allowExt)>=0 || settings.allowExt.length==0))
 			{
 				var obj={pos	: pos,
@@ -576,7 +583,14 @@
 		init : function(options)
 		{
     	    return this.each(function() 
-    	    {	
+    	    {
+				if(!isAjaxUpload)
+				{
+					// if ajax upload is not possible, do not attempt to do something
+					// users with IE are "helpless"...
+					return;
+				}
+			
 				var $this = $(this);
 				if($this.hasClass('ax-uploader'))//for avoiding two times call errors
 				{
@@ -651,7 +665,7 @@
 			    var otherinfo	= $('<span class="ax-net-info"></span>').appendTo($this);
 			    
 			    //get selected files
-			    browseFiles.bind('change',function(){
+			    browseFiles.bind('change',function(){				
 			    	//disable option			
 			    	if(!settings.enable) return;
 			    	if(isAjaxUpload)
@@ -821,8 +835,47 @@
 				}
 				else
 				{
+					alert(settings[option]);
 					return settings[option];
 				}
+			});
+		},
+		filelist : function(value)
+		{
+			return this.each(function(){
+				var $this=$(this);
+				var settings = $this.data('settings');
+				fileList = settings.FILES;
+			});
+		},
+		addspecialised : function(fileInput,original,localisation,device)
+		{
+			return this.each(function() {
+				var settings = $(this).data('settings');
+				
+				// if we have a localisation, add it to the data-object which
+				// is sent as GET request during upload
+				if(localisation != '' && localisation != 'generic')
+				{
+					settings['data']["localisation"] = localisation;
+				}
+				
+				if(!settings.enable) return;
+			   	if(isAjaxUpload)
+			   	{
+					// first clear queue
+					clearQueue(settings);
+				
+					// edit the name to be uploaded
+					currentUploadFileName = original;
+					var ext	= currentUploadFileName.split('.').pop().toLowerCase();
+					var extRegEx = new RegExp('\.' + ext, 'g');
+					currentUploadFileName = currentUploadFileName.replace(extRegEx, '') + device + '.' + ext;
+			   		addFiles(fileInput.files, $('.ax-file-list'), settings);
+					//startUpload(settings.FILES);
+			   		//if(navigator.userAgent.toLowerCase().indexOf('chrome') > -1);
+			   		//	refreshBrowse();//Chrome "bug??" fix reselecting the same file
+			   	}
 			});
 		}
 	};
