@@ -53,7 +53,18 @@ class apdModulePresentation extends apdModuleBasicModule
 		parent::processForm();
 		
 		$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "views SET view_action = view_name WHERE view_id = ?", array(array($this->viewId, "i")));
-		
+	
+		// preemptive cleanup
+		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "concept_presentation WHERE view_id = ?", array(array($this->viewId, "i")));
+	
+		if(isset($_REQUEST['view_pdfselection']) && $_REQUEST['view_pdfselection'] != -1)
+		{
+			$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_presentation (view_id, image_position, image_path) VALUES(?, 0, ?)", array(array($this->viewId, "i"), array($_REQUEST['view_pdfselection'])));
+		}
+		else
+		{
+		}
+	
 		// update concept type id for this view
 		$conceptQuery = $this->mc->database->query("SELECT concept_id FROM " . $this->mc->config['database_pref'] . "concepts WHERE concept_key = 'presentation'", array());
 		$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "views SET view_c_type = ? WHERE view_id = ?", array(array($conceptQuery->rows[0]->concept_id, "i"), array($this->viewId, "i")));
@@ -90,8 +101,11 @@ class apdModulePresentation extends apdModuleBasicModule
 		*/
 		$output = '<?xml version="1.0" encoding="UTF-8"?><xml>';
 	
-			$output .= '<galleryimage src="MI_IR1_M_02_SE_Architektur.pdf" id="0" />';
-
+		$imagesQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_presentation WHERE view_id = ? ORDER BY image_position ASC", array(array($this->viewId, "i")));
+		foreach($imagesQuery->rows as $currentImage)
+		{
+			$output .= '<galleryimage src="' . $currentImage->image_path . '" id="' . $currentImage->image_position . '" />';
+		}
 		$output .= '</xml>';
 		
 		//$outputFileSuffix = (count($imageQuery->rows) == 1 ? '' : ($currentDeviceType->device_suffix));

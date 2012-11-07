@@ -101,6 +101,8 @@ class apdModuleTabBar
 		*/
 		if($this->tabBarId >= 0)
 		{
+			$this->cleanUpDirectory();
+		
 			// set the tabbar-name
 			$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "tabbars SET tabbar_name = ? WHERE tabbar_id = ?", array(array($_REQUEST['tabbar_name']), array($this->tabBarId, "i")));
 			
@@ -118,20 +120,24 @@ class apdModuleTabBar
 			{
 				if(isset($_REQUEST['tabbar_view_' . $frontIdCount]))
 				{
+					$tabbarIconPath = pathinfo($_REQUEST['tabbar_icon_' . $frontIdCount]);
+					$normalTabbarIcon = $tabbarIconPath["filename"] . "." . $tabbarIconPath["extension"];
+					$retinaTabbarIcon = $tabbarIconPath["filename"] . "@2x." . $tabbarIconPath["extension"];
+					
+					@copy('images/tabbar/' . $_REQUEST['tabbar_icon_' . $frontIdCount], $this->mc->config['upload_dir'] . '/root/tabbar/' . $normalTabbarIcon);
+					if(file_exists('images/tabbar/' . $tabbarIconPath["dirname"] . '/' . $retinaTabbarIcon))
+					{
+						@copy('images/tabbar/' . $tabbarIconPath["dirname"] . '/' . $retinaTabbarIcon, $this->mc->config['upload_dir'] . '/root/tabbar/' . $retinaTabbarIcon);
+					}
+					
 					// insert record in database
-					$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "tabs (tabbar_id, tab_id, tab_position, tab_view, tab_icon) VALUES(?,?,?,?,?)", array(array($this->tabBarId, "i"), array($dataIdCount, "i"), array($dataIdCount, "i"), array($_REQUEST['tabbar_view_' . $frontIdCount], "i") , array($_REQUEST['tabbar_icon_' . $frontIdCount])));
+					$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "tabs (tabbar_id, tab_id, tab_position, tab_view, tab_icon) VALUES(?,?,?,?,?)", array(array($this->tabBarId, "i"), array($dataIdCount, "i"), array($dataIdCount, "i"), array($_REQUEST['tabbar_view_' . $frontIdCount], "i") , array($normalTabbarIcon)));
 					// check if this tab is set to default tab
 					if(isset($_REQUEST['tabbar_view_default_' .$frontIdCount]) && $_REQUEST['tabbar_view_default_' .$frontIdCount] == 'front')
+					{
 						$defaultTab = $dataIdCount;
+					}
 					
-						$tabbarIconPath = pathinfo($_REQUEST['tabbar_icon_' . $frontIdCount]);
-						$retinaTabbarIcon = $tabbarIconPath["filename"] . "@2x." . $tabbarIconPath["extension"];
-						@copy('images/tabbar/icons/' . $_REQUEST['tabbar_icon_' . $frontIdCount], $this->mc->config['upload_dir'] . '/root/tabbar/' . $_REQUEST['tabbar_icon_' .$frontIdCount]);
-						if(file_exists('images/tabbar/icons/' . $retinaTabbarIcon))
-						{
-							@copy('images/tabbar/icons/' . $retinaTabbarIcon, $this->mc->config['upload_dir'] . '/root/tabbar/' . $retinaTabbarIcon);
-						}
-						
 					// increment ID
 					$dataIdCount++;
 				}
@@ -208,5 +214,21 @@ class apdModuleTabBar
 			// otherwise, search recursively
 			return checkForParentsPath($viewParent->parent_id);
 		}
+	}
+	
+	function cleanUpDirectory()
+	{
+		$filePath = $this->mc->config['upload_dir'] . 'root/tabbar/';
+		if($tabbarIconFolderHandle = opendir($filePath))
+		{
+			while (false !== ($currentTabbarIcon = readdir($tabbarIconFolderHandle)) )
+			{
+				if(!preg_match('#^\.|\.\.|/+|\\\\+$#si', $currentTabbarIcon))
+				{
+					unlink($filePath . $currentTabbarIcon);
+				}
+			}
+		}
+		closedir($tabbarIconFolderHandle);
 	}
 }
