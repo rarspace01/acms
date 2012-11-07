@@ -29,14 +29,14 @@ function initCurrentModule($mainContainer)
 {
 	// check if a view-id was given
 	// will call parent constructor!
-	return new apdModuleLandingpage($mainContainer,
+	return new apdModuleButtonview($mainContainer,
 		(
 		(isset($_REQUEST['view_id']) && intval($_REQUEST['view_id']) >= 0)
 			? intval($_REQUEST['view_id']) : -1
 		));
 }
 
-class apdModuleLandingpage extends apdModuleBasicModule
+class apdModuleButtonview extends apdModuleBasicModule
 {
 
 	/**
@@ -67,9 +67,9 @@ class apdModuleLandingpage extends apdModuleBasicModule
 		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "view_links WHERE view_id_parent = ?", array(array($this->viewId, "i")));
 		
 		// delete all content for this view
-		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "concept_landingpage_images WHERE view_id = ?", array(array($this->viewId, "i")));
-		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "concept_landingpage_actions WHERE view_id = ?", array(array($this->viewId, "i")));
-		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "localisation_keys WHERE local_key LIKE ?", array(array('landingpage_button_view_' . $this->viewId . '_%')));
+		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "concept_buttonview_images WHERE view_id = ?", array(array($this->viewId, "i")));
+		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "concept_buttonview_actions WHERE view_id = ?", array(array($this->viewId, "i")));
+		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "localisation_keys WHERE local_key LIKE ?", array(array('buttonview_button_view_' . $this->viewId . '_%')));
 				
 		// go through list of languages
 		$availableLanguageQuery = $this->mc->database->query("SELECT local_id FROM " . $this->mc->config['database_pref'] . "localisations", array());
@@ -90,16 +90,16 @@ class apdModuleLandingpage extends apdModuleBasicModule
 						
 						if($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_key] >= 0)
 						{
-							$buttonLanguageKey = 'landingpage_button_view_' . $this->viewId . '_device_' . $currentViewType->device_id . '_id_' . $buttonCounter;
+							$buttonLanguageKey = 'buttonview_button_view_' . $this->viewId . '_device_' . $currentViewType->device_id . '_id_' . $buttonCounter;
 							
 							// update localisation-value for button-titles
 							foreach($availableLanguageQuery->rows as $availableLanguage)
-								$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "localisation_keys (local_id, local_key, local_value) VALUES(?,?,?)", array(array($availableLanguage->local_id, "i"), array($buttonLanguageKey), array($_REQUEST['landingpage_view_' . $i . '_' . $currentViewType->device_key . '_' . $availableLanguage->local_id])));
+								$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "localisation_keys (local_id, local_key, local_value) VALUES(?,?,?)", array(array($availableLanguage->local_id, "i"), array($buttonLanguageKey), array($_REQUEST['buttonview_view_' . $i . '_' . $currentViewType->device_key . '_' . $availableLanguage->local_id])));
 							
 							$actionCommandValue = ($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_key] > 0) ? $_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_key] : $_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_key . '_custom'];
 							
-							// insert into concept_landingpage_actions
-							$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_landingpage_actions (view_id, view_type, action_title, action_posx, action_posy, action_width, action_height, action_command) VALUES(?,?,?,?,?,?,?,?)", array(array($this->viewId, "i"), array($currentViewType->device_id, "i"), array($buttonLanguageKey), array($_REQUEST['button_left_' . $i . '_' . $currentViewType->device_key], "i"), array($_REQUEST['button_top_' . $i . '_' . $currentViewType->device_key], "i"), array($_REQUEST['button_width_' . $i . '_' . $currentViewType->device_key], "i"), array($_REQUEST['button_height_' . $i . '_' . $currentViewType->device_key], "i"), array($actionCommandValue, "s")));
+							// insert into concept_buttonview_actions
+							$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_buttonview_actions (view_id, view_type, action_title, action_posx, action_posy, action_width, action_height, action_command) VALUES(?,?,?,?,?,?,?,?)", array(array($this->viewId, "i"), array($currentViewType->device_id, "i"), array($buttonLanguageKey), array($_REQUEST['button_left_' . $i . '_' . $currentViewType->device_key], "i"), array($_REQUEST['button_top_' . $i . '_' . $currentViewType->device_key], "i"), array($_REQUEST['button_width_' . $i . '_' . $currentViewType->device_key], "i"), array($_REQUEST['button_height_' . $i . '_' . $currentViewType->device_key], "i"), array($actionCommandValue, "s")));
 							
 							// it is a linked view
 							if($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_key] > 0)
@@ -115,12 +115,12 @@ class apdModuleLandingpage extends apdModuleBasicModule
 						}
 					}
 				}
-				$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_landingpage_images (view_id, view_type, image, width, height) VALUES(?,?,?,0,0)", array(array($this->viewId, "i"), array($currentViewType->device_id, "i"), array($_REQUEST['picture_name_' . $currentViewType->device_key])));
+				$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_buttonview_images (view_id, view_type, image, width, height) VALUES(?,?,?,0,0)", array(array($this->viewId, "i"), array($currentViewType->device_id, "i"), array($_REQUEST['picture_name_' . $currentViewType->device_key])));
 			}
 		}		
 		
 		// update concept type id for this view
-		$conceptQuery = $this->mc->database->query("SELECT concept_id FROM " . $this->mc->config['database_pref'] . "concepts WHERE concept_key = 'landingpage'", array());
+		$conceptQuery = $this->mc->database->query("SELECT concept_id FROM " . $this->mc->config['database_pref'] . "concepts WHERE concept_key = 'buttonview'", array());
 		$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "views SET view_c_type = ?, view_background = ? WHERE view_id = ?", array(array($conceptQuery->rows[0]->concept_id, "i"), array($this->viewDetails->view_name . '.png'), array($this->viewId, "i")));
 		
 		$this->cleanUpDirectory();
@@ -134,7 +134,7 @@ class apdModuleLandingpage extends apdModuleBasicModule
 		$fileManagerObj = new apdModuleFilemanager($this->mc);
 		$fileManagerObj->refreshFilelist();
 		
-		header("Location: index.php?m=landingpage&view_id=" . $this->viewId);
+		header("Location: index.php?m=buttonview&view_id=" . $this->viewId);
 	}
 	
 	/**
@@ -151,11 +151,11 @@ class apdModuleLandingpage extends apdModuleBasicModule
 	{
 		$imageFileName = "";
 	
-		$imageQuery = $this->mc->database->query("SELECT A.image, B.view_name, A.view_type, C.device_suffix, C.device_key FROM " . $this->mc->config['database_pref'] . "concept_landingpage_images AS A, " . $this->mc->config['database_pref'] . "views AS B, " . $this->mc->config['database_pref'] . "devices AS C WHERE A.view_id = ? AND A.view_id = B.view_id AND A.view_type = C.device_id", array(array($this->viewId, "i")));
+		$imageQuery = $this->mc->database->query("SELECT A.image, B.view_name, A.view_type, C.device_suffix, C.device_key FROM " . $this->mc->config['database_pref'] . "concept_buttonview_images AS A, " . $this->mc->config['database_pref'] . "views AS B, " . $this->mc->config['database_pref'] . "devices AS C WHERE A.view_id = ? AND A.view_id = B.view_id AND A.view_type = C.device_id", array(array($this->viewId, "i")));
 		foreach($imageQuery->rows as $currentImageFile)
 		{
 			$imageFileName = $currentImageFile->image;
-			$filePath = $this->mc->config['upload_dir'] . 'modules/landingpage/pictures/' . $imageFileName;
+			$filePath = $this->mc->config['upload_dir'] . 'modules/buttonview/pictures/' . $imageFileName;
 			
 			$fileNameParts	= pathinfo($filePath);
 			$format = $fileNameParts['extension'];
@@ -179,7 +179,7 @@ class apdModuleLandingpage extends apdModuleBasicModule
 					else
 						return false;
 						
-					$destinationFileName = $currentImageFile->view_name . '_background';
+					$destinationFileName = $currentImageFile->view_name;
 					
 					// device-specific heights
 					// will be "streched" on device probably, with tabbar and navigationbar
@@ -242,7 +242,7 @@ class apdModuleLandingpage extends apdModuleBasicModule
 		foreach($deviceTypeQuery->rows as $currentDeviceType)
 		{
 			$output = '<?xml version="1.0" encoding="UTF-8"?><xml>';
-			$buttonActionQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_landingpage_actions WHERE view_id = ? AND view_type = ?", array(array($this->viewId, "i"), array($currentDeviceType->device_id, "i")));
+			$buttonActionQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_buttonview_actions WHERE view_id = ? AND view_type = ?", array(array($this->viewId, "i"), array($currentDeviceType->device_id, "i")));
 			foreach($buttonActionQuery->rows as $currentButtonAction)
 			{
 				// check if buttonaction is suitable for this current tile
@@ -270,7 +270,7 @@ class apdModuleLandingpage extends apdModuleBasicModule
 			
 			if(count($buttonActionQuery->rows) > 0)
 			{
-				$imageQuery = $this->mc->database->query("SELECT image FROM " . $this->mc->config['database_pref'] . "concept_landingpage_images  WHERE view_id = ?", array(array($this->viewId, "i")));
+				$imageQuery = $this->mc->database->query("SELECT image FROM " . $this->mc->config['database_pref'] . "concept_buttonview_images  WHERE view_id = ?", array(array($this->viewId, "i")));
 				$outputFileSuffix = (count($imageQuery->rows) == 1 ? '' : ($currentDeviceType->device_suffix));
 				$outputFileHandle = fopen($this->mc->config['upload_dir'] . '/root/xml/'. $this->viewDetails->view_name . $outputFileSuffix . '.xml', 'wb');
 				fwrite($outputFileHandle, $output);
@@ -289,16 +289,16 @@ class apdModuleLandingpage extends apdModuleBasicModule
 	{
 		parent::cleanUpDirectory();
 		$filePath = $this->mc->config['upload_dir'] . 'root/pictures/';
-		if($landingpageFolderHandle = opendir($filePath))
+		if($buttonviewFolderHandle = opendir($filePath))
 		{
-			while (false !== ($currentPictureFile = readdir($landingpageFolderHandle)) )
+			while (false !== ($currentPictureFile = readdir($buttonviewFolderHandle)) )
 			{
-				if(preg_match('#^' . $this->viewDetails->view_name . '_background(.*?)#si', $currentPictureFile))
+				if(preg_match('#^' . $this->viewDetails->view_name . '(.*?)#si', $currentPictureFile))
 				{
 					unlink($filePath . $currentPictureFile);
 				}
 			}
 		}
-		closedir($landingpageFolderHandle);
+		closedir($buttonviewFolderHandle);
 	}
 }

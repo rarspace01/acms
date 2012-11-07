@@ -51,6 +51,19 @@ class apdModuleFilemanager
 		$this->regExFileExtensions[] = array('jpg|jpeg|png', 'pictures');
 		$this->regExFileExtensions[] = array('mp4|mpg|mpeg|m4v|avi', 'videos');
 		$this->regExFileExtensions[] = array('mp3|m4a|wav|wave|flac', 'audio');
+		
+		$this->reservedPrefixes = array();
+		$this->reservedPrefixes["png"]	= "content-back|view_name_(?:[0-9]+)_tile_|tabbaricon_";
+		$this->reservedPrefixes["xml"]	= "app_structure|view_name_(?:[0-9]+)";
+		$this->reservedPrefixes["html"]	= "view_name_(?:[0-9]+)";
+	
+
+		$this->deviceSuffixes = array();
+		$fileTypesQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "devices", array());
+		foreach($fileTypesQuery->rows as $currentFileType)
+		{
+			$this->deviceSuffixes[] = array($currentFileType->device_id, $currentFileType->device_suffix);
+		}
 	}
 	
 	/**
@@ -64,6 +77,8 @@ class apdModuleFilemanager
 	*/
 	function processForm()
 	{
+		if(!isset($_REQUEST['type']))
+			return;
 		/*
 		==================
 		ajax file uploader
@@ -84,13 +99,21 @@ class apdModuleFilemanager
 			{
 				$this->uploadPath .= 'modules/zoomimage/';
 			}
-			else if($uploadType == 'landingpage')
+			else if($uploadType == 'buttonview')
 			{
-				$this->uploadPath .= 'modules/landingpage/';
+				$this->uploadPath .= 'modules/buttonview/';
 			}
 			else
 			{
 				$this->uploadPath .= 'root/';
+				if(isset($_REQUEST['localisation']))
+				{
+					$checkLocalisationQuery = $this->mc->database->query("SELECT * FROM ". $this->mc->config['database_pref'] . "localisation WHERE local_key = ? AND local_active = 1", array(array($_REQUEST['localisation'])));
+					if(count($checkLocalisationQuery->rows) >= 0)
+					{
+						$this->uploadPath .= $_REQUEST['localisation'] . '.lproj';
+					}
+				}
 			}
 			$fileName	= $_REQUEST['ax-file-name'];
 			$currByte	= $_REQUEST['ax-start-byte'];
@@ -175,6 +198,53 @@ class apdModuleFilemanager
 		}
 		/*
 		===========================
+		move/rename a generic file
+		===========================
+		*/
+		else if($_REQUEST['type'] == 'movegeneric')
+		{
+			if(isset($_REQUEST['filetype']) && $_REQUEST['filetype'] == 'device')
+			{
+				// check if there is a real device-type
+				if(isset($_REQUEST['set_device_type']) && $_REQUEST['set_device_type'] != "generic")
+				{
+					$filePath = $this->mc->config['upload_dir'] . 'root/' . $_REQUEST['path'];					
+					$fileName = $_REQUEST['filename']; // name of the meta-file, the file that is not "specialised" yet
+					$fileExtension = array_pop(explode('.', $fileName)); // name of the meta-file, the file that is not "specialised" yet
+					if(file_exists($filePath) && is_dir($filePath))
+					{
+						// first check if file is not "specialised" for one device yet
+						$noSpecialisedFile = true;
+						// get device list
+						$deviceListQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "devices ORDER BY device_default DESC, device_id ASC", array());
+						foreach($deviceListQuery->rows as $currentDeviceType)
+						{
+							if(preg_match('#^(.*?)' . $currentDeviceType->device_suffix . '((\.([a-zA-z0-9]+?))?)$#si', $fileName))
+							{
+								$noSpecialisedFile = false;
+								break;
+							}
+						}
+						if($noSpecialisedFile)
+						{
+							$deviceListQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "devices WHERE device_key = ?", array(array($_REQUEST['set_device_type'])));
+							if(count($deviceListQuery->rows) > 0)
+							{
+								// name to be renamed
+								$renameFileName = preg_replace('#^(.*?)\.' . $fileExtension . '$#si', '$1' . $deviceListQuery->rows[0]->device_suffix . '.' . $fileExtension, $fileName);
+								if(file_exists($filePath . '/' . $fileName))
+								{
+									rename($filePath . '/' . $fileName, $filePath . '/' . $renameFileName);
+								}
+							}
+						}
+					}
+				}
+			}
+			header("Location: index.php?m=filemanager&path=" . $_REQUEST['path']);
+		}
+		/*
+		===========================
 		"cleanup" after file upload
 		===========================
 		*/
@@ -235,7 +305,6 @@ class apdModuleFilemanager
 		
 		if(count($fileQuery->rows) > 0)
 		{
-			//$fileName = $this->mc->config['upload_dir'] . '/' . $fileQuery->rows[0]->path . $fileQuery->rows[0]->filename;
 			$fileName = $fileQuery->rows[0]->path . $fileQuery->rows[0]->filename;
 			
 			header('Content-Description: File Transfer');
@@ -307,7 +376,7 @@ class apdModuleFilemanager
 	function refreshFilelist()
 	{
 		$starttime = time();
-		$this->directoryToArray($this->mc->config['upload_dir']);
+		$this->directoryToArray($this->mc->config['upload_dir'] . '/root/');
 		$this->removeOldFiles($starttime);
 	}
 
@@ -358,7 +427,7 @@ class apdModuleFilemanager
 							$filef = $directory . '/' . $file;
                         
 							// create / update specific file
-							$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "fm_files (GFID,MFID,path,filename,size,hash,lastscan,devicetype) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE size = ?, hash = ?, lastscan= ?, MFID = ?, devicetype = ?", array(array(hash('sha1',$filef)), array($this->getMetaFileHashFromMetaFile($filef)), array($directory.'/'), array($file),  array(filesize($filef), "i"), array(hash_file('sha1',$filef)), array(time(), "i"), array($this->detectFileType($file)), array(filesize($filef), "i"), array(hash_file('sha1',$filef)), array(time(), "i"), array($this->getMetaFileHashFromMetaFile($filef)), array($this->detectFileType($file))));
+							$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "fm_files (GFID,MFID,path,filename,size,hash,lastscan,devicetype) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE size = ?, hash = ?, lastscan= ?, MFID = ?, devicetype = ?", array(array(hash('sha1',$filef)), array($this->getMetaFileHashFromMetaFile($filef)), array($directory.'/'), array($file),  array(filesize($filef), "i"), array(hash_file('sha1',$filef)), array(time(), "i"), array($this->detectFileType($file, $directory)), array(filesize($filef), "i"), array(hash_file('sha1',$filef)), array(time(), "i"), array($this->getMetaFileHashFromMetaFile($filef)), array($this->detectFileType($file, $directory))));
 
 							// create / update metafile
 							$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "fm_metafiles (MFID,mfilename,mlastscan) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE mfilename = ?, mlastscan = ?", array(array($this->getMetaFileHashFromMetaFile($filef)), array($this->getMetaFileName($file)), array(time(), "i"), array($this->getMetaFileName($file)), array(time(), "i")));
@@ -392,21 +461,29 @@ class apdModuleFilemanager
 		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "fm_metafiles WHERE mlastscan < ?", array(array($worktime, "i")));	
 	}
 
-	function detectFileType($filename)
+	function detectFileType($filename, $path)
 	{
-		// 0 = all
-		// 1 = iPad
-		// 2 = iPhone/iPod
+		// remove eventual device suffix to check if there are other devicetypes, too
+		$suffixLessFilename = preg_replace('#^(.+?)_(?:[a-zA-Z]{2})\.(.+?)$#si', '$1', $filename);
+		$suffixLessFileExt = preg_replace('#^(?:.+?)\.(.+?)$#si', '$1', $filename);
 
-		if(preg_match('/^(.+?)_ia\.(.+?)$/si', $filename))
+		$returnDeviceType = 0;
+		$existingDeviceTypes = 0;
+		foreach($this->deviceSuffixes as $currentDeviceType)
 		{
-			return 1; // ipad file
+			if(preg_match('#^(.+?)'.$currentDeviceType[1].'\.(.+?)$#si', $filename))
+			{
+				$returnDeviceType = $currentDeviceType[0];
+			}
+			if(file_exists($path . '/' . $suffixLessFilename . $currentDeviceType[1] . '.' . $suffixLessFileExt))
+			{
+				$existingDeviceTypes++;
+			}
 		}
-		elseif(preg_match('/^(.+?)_io\.(.+?)$/si', $filename))
-		{
-			return 2; // iphone file
-		}
-		return 0; // generic file
+		if($existingDeviceTypes > 1)
+			return $returnDeviceType;
+		else
+			return 0; // generic file
 	}
 
 	function getMetaFileName($filename)
@@ -563,7 +640,7 @@ class apdModuleFilemanager
 
 		$fileName	= str_replace($badWinChars, '', $fileName);
 		$fileInfo	= pathinfo($fileName);
-		$fileExt	= $fileInfo['extension'];
+		$fileExt	= strtolower($fileInfo['extension']);
 		$fileBase	= $fileInfo['filename'];
 		
 		//check if legal windows file name
@@ -578,6 +655,12 @@ class apdModuleFilemanager
 		{
 			echo json_encode(array('name'=>$fileName, 'size'=>0, 'status'=>'error', 'info'=>"Extension [$fileExt] not allowed."));	
 			return false;
+		}
+		
+		// check if there are any prefix-rules for this file-type/extension
+		if(isset($this->reservedPrefixes[$fileExt]))
+		{
+			$fileName = preg_replace('#^' . $this->reservedPrefixes[$fileExt] . '#si', '', $fileName);
 		}
 		
 		$uploadPath = $this->uploadPath;
