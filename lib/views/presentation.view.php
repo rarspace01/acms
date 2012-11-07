@@ -76,7 +76,45 @@ class apdViewPresentation extends apdViewBasicModule
 		// call parent template to insert form for basic info for this view
 		parent::initTemplate();
 		$this->template = preg_replace('#\{BASIC_INFO\}#si', parent::printTemplate(), $currentTemplate);
-				
+		
+		$currentImagesQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_presentation WHERE view_id = ?", array(array($this->viewId, "i")));
+		
+		/*
+		=============
+		existing PDFs
+		=============
+		*/
+		// set of PDFs
+		$pdfSet = array();
+		if($mainFolderHandle = opendir($this->mc->config['upload_dir'] . '/root'))
+		{
+			while (false !== ($currentPdf = readdir($mainFolderHandle)) )
+			{
+				if(preg_match('#^(.*?)\.pdf$#si', $currentPdf))
+					$pdfSet[] = $currentPdf;
+			}
+		}
+		closedir($mainFolderHandle);
+		reset($pdfSet);
+		sort($pdfSet);
+		
+		preg_match_all('#\{FOR_PDFS(.*?)FOR_PDFS\}#si', $this->template, $forPdfsTemplate);
+		$forPdfsTemplate[0] = "";
+		foreach($pdfSet as $currentPdf)
+		{
+			$currentPdfTpl = preg_replace('#\{PDFNAME\}#si', $currentPdf, $forPdfsTemplate[1][0]);
+			if(count($currentImagesQuery) > 0 && $currentImagesQuery->rows[0]->image_path == $currentPdf)
+			{
+				$currentPdfTpl = preg_replace('#\{HTMLSELECTED\}#si', 'selected', $currentPdfTpl);
+			}
+			else
+			{
+				$currentPdfTpl = preg_replace('#\{HTMLSELECTED\}#si', '', $currentPdfTpl);
+			}
+			$forPdfsTemplate[0] .= $currentPdfTpl;
+		}
+		$this->template = preg_replace('#\{FOR_PDFS(.*?)FOR_PDFS\}#si', $forPdfsTemplate[0], $this->template);
+		
 		return $this->template;
 	}
 }

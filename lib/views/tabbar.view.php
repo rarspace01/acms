@@ -101,11 +101,13 @@ class apdViewTabBar implements apdIView
 		$this->template = preg_replace('#\{VIEWID\}#si', $this->tabBarId, $this->template);
 		$this->template = preg_replace('#\{TABBAR_NAME\}#si', $this->tabBarDetails->tabbar_name, $this->template);
 		
-		
+		/*
+		=============
+		list of views
+		=============
+		*/
 		preg_match_all('#\{FOR_VIEWS(.*?)FOR_VIEWS\}#si', $this->template, $forTabViews);
 		$forTabViews[0] = "";
-		
-		// get list of files
 		for($i = 0; $i < count($this->viewList); $i++)
 		{
 			$currentView = $this->viewList[$i];
@@ -117,46 +119,101 @@ class apdViewTabBar implements apdIView
 		}
 		$this->template = preg_replace('#\{FOR_VIEWS(.*?)FOR_VIEWS\}#si', $forTabViews[0], $this->template);
 		
+		/*
+		============
+		TabBar Icons
+		============
+		*/
+		// custom icon, user defined/uploaded
+		$tabbarIconSetCustom = array();
+		if($tabbarIconFolderHandle = opendir("images/tabbar/custom"))
+		{
+			while (false !== ($currentTabIcon = readdir($tabbarIconFolderHandle)) )
+			{
+				if(preg_match('#^(.+?)(?<!@2x)\.png$#si', $currentTabIcon))
+					$tabbarIconSetCustom[] = $currentTabIcon;
+			}
+		}
+		closedir($tabbarIconFolderHandle);
+		reset($tabbarIconSetCustom);
+		sort($tabbarIconSetCustom);
+		
+		// default icons (predefined "arbitrary" set)
+		$tabbarIconSetDefault = array();
+		if($tabbarIconFolderHandle = opendir("images/tabbar/default"))
+		{
+			while (false !== ($currentTabIcon = readdir($tabbarIconFolderHandle)) )
+			{
+				if(preg_match('#^(.+?)(?<!@2x)\.png$#si', $currentTabIcon))
+					$tabbarIconSetDefault[] = $currentTabIcon;
+			}
+		}
+		closedir($tabbarIconFolderHandle);
+		reset($tabbarIconSetDefault);
+		sort($tabbarIconSetDefault);
+			
+		// complete standard set (without default icons!)
+		$tabbarIconSetStandard = array();
+		if($tabbarIconFolderHandle = opendir("images/tabbar/icons"))
+		{
+			while (false !== ($currentTabIcon = readdir($tabbarIconFolderHandle)) )
+			{
+				if(preg_match('#^(.+?)(?<!@2x)\.png$#si', $currentTabIcon))
+					$tabbarIconSetStandard[] = $currentTabIcon;
+			}
+		}
+		closedir($tabbarIconFolderHandle);
+		reset($tabbarIconSetStandard);
+		sort($tabbarIconSetStandard);
+		
+		// insert in list in this order
+		preg_match_all('#\{FOR_TABICONS(.*?)FOR_TABICONS\}#si', $this->template, $forTabBarTabIcons);
+		$forTabBarTabIcons[0] = "";
+		foreach($tabbarIconSetCustom as $currentTabIcon)
+		{
+			$currentTabIconTpl = preg_replace('#\{ICON_NAME\}#si', $currentTabIcon, $forTabBarTabIcons[1][0]);
+			$currentTabIconTpl = preg_replace('#\{ICON_FILENAME\}#si', 'custom/' . $currentTabIcon, $currentTabIconTpl);
+			$forTabBarTabIcons[0] .= $currentTabIconTpl;
+		}
+		foreach($tabbarIconSetDefault as $currentTabIcon)
+		{
+			$currentTabIconTpl = preg_replace('#\{ICON_NAME\}#si', $currentTabIcon, $forTabBarTabIcons[1][0]);
+			$currentTabIconTpl = preg_replace('#\{ICON_FILENAME\}#si', 'default/' . $currentTabIcon, $currentTabIconTpl);
+			$forTabBarTabIcons[0] .= $currentTabIconTpl;
+		}
+		foreach($tabbarIconSetStandard as $currentTabIcon)
+		{
+			$currentTabIconTpl = preg_replace('#\{ICON_NAME\}#si', $currentTabIcon, $forTabBarTabIcons[1][0]);
+			$currentTabIconTpl = preg_replace('#\{ICON_FILENAME\}#si', 'icons/' . $currentTabIcon, $currentTabIconTpl);
+			$forTabBarTabIcons[0] .= $currentTabIconTpl;
+		}
+		$this->template = preg_replace('#\{FOR_TABICONS(.*?), FOR_TABICONS\}#si', substr($forTabBarTabIcons[0], 0, -2), $this->template);
+		
+		/*
+		=============
+		existing tabs
+		=============
+		*/
 		preg_match_all('#\{FOR_TABS(.*?)FOR_TABS\}#si', $this->template, $forTabBarTabs);
 		$forTabBarTabs[0] = "";
-		
 		$maxTabId = 0;
 		if(isset($this->tabs) && is_array($this->tabs))
 		{
 			// insert infos for all tabs
 			foreach($this->tabs as $currentTab)
 			{
+				$iconPath = (in_array($currentTab->tab_icon, $tabbarIconSetCustom) ? 'custom' : (in_array($currentTab->tab_icon, $tabbarIconSetDefault) ? 'default' : 'icons'));
+			
 				$maxTabId = max($maxTabId, $currentTab->tab_id);
 				$currentTabTpl = preg_replace('#\{TAB_ID\}#si', $currentTab->tab_id, $forTabBarTabs[1][0]);
 				$currentTabTpl = preg_replace('#\{DEFAULT_TAB\}#si', ($currentTab->tab_default)?'true':'false', $currentTabTpl);
 				$currentTabTpl = preg_replace('#\{TAB_VIEW_ID\}#si', $currentTab->tab_view, $currentTabTpl);
-				$currentTabTpl = preg_replace('#\{TAB_ICON\}#si', $currentTab->tab_icon, $currentTabTpl);
+				$currentTabTpl = preg_replace('#\{TAB_ICON\}#si', 'new Array("' . $iconPath . '/' . $currentTab->tab_icon . '", "' . $currentTab->tab_icon . '")', $currentTabTpl);
 				$forTabBarTabs[0] .= $currentTabTpl;
 			}
 		}
 		$this->template = preg_replace('#\{FOR_TABS(.*?)FOR_TABS\}#si', $forTabBarTabs[0], $this->template);
 		$this->template = preg_replace('#\{MAXTABID\}#si', $maxTabId, $this->template);
-			
-			
-		preg_match_all('#\{FOR_TABICONS(.*?)FOR_TABICONS\}#si', $this->template, $forTabBarTabIcons);
-		$forTabBarTabIcons[0] = "";
-		if($tabbarIconFolderHandle = opendir("images/tabbar/icons"))
-		{
-			while (false !== ($currentTabIcon = readdir($tabbarIconFolderHandle)) )
-			{
-				if(preg_match('#^(.+?)\.png$#si', $currentTabIcon))
-				{
-					if(!preg_match('#^(.+?)@2x\.png$#si', $currentTabIcon))
-					{
-						$currentTabIconTpl = preg_replace('#\{ICON_NAME\}#si', preg_replace('#^(.+?)\.png$#si', '$1', $currentTabIcon), $forTabBarTabIcons[1][0]);
-						$currentTabIconTpl = preg_replace('#\{ICON_FILENAME\}#si', $currentTabIcon, $currentTabIconTpl);
-						$forTabBarTabIcons[0] .= $currentTabIconTpl;
-					}
-				}
-			}
-		}
-		closedir($tabbarIconFolderHandle);
-		$this->template = preg_replace('#\{FOR_TABICONS(.*?), FOR_TABICONS\}#si', substr($forTabBarTabIcons[0], 0, -2), $this->template);
 	
 		return $this->template;
 	}

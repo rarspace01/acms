@@ -28,14 +28,14 @@ function initCurrentView($mainContainer)
 {
 	// check if a view-id was given
 	// will call parent constructor!
-	return new apdViewLandingpage($mainContainer,
+	return new apdViewButtonview($mainContainer,
 		(
 		(isset($_REQUEST['view_id']) && intval($_REQUEST['view_id']) >= 0)
 			? intval($_REQUEST['view_id']):-1
 		));
 }
 
-class apdViewLandingpage extends apdViewBasicModule
+class apdViewButtonview extends apdViewBasicModule
 {
 	/**
 	* function - initTemplate
@@ -48,7 +48,7 @@ class apdViewLandingpage extends apdViewBasicModule
 	*/
 	function initTemplate()
 	{
-		include('templates/' . $this->mc->config['template'] . '/modules/landingpage/landingpage.html');
+		include('templates/' . $this->mc->config['template'] . '/modules/buttonview/buttonview.html');
 		$this->template = ob_get_contents();
 		ob_clean();
 	}
@@ -105,11 +105,11 @@ class apdViewLandingpage extends apdViewBasicModule
 		
 		$this->template = $this->mc->devicetypes->viewDeviceTemplates($this->template, $this);
 		
-		preg_match_all('#\{FOR_LANDINGPAGE_BACKGROUND(.*?)FOR_LANDINGPAGE_BACKGROUND\}#si', $this->template, $forLandingpageBackground);
+		preg_match_all('#\{FOR_BUTTONVIEW_BACKGROUND(.*?)FOR_BUTTONVIEW_BACKGROUND\}#si', $this->template, $forLandingpageBackground);
 		$forLandingpageBackground[0] = "";
-		if($landingpageFolderHandle = opendir($this->mc->config['upload_dir'] . 'modules/landingpage/pictures/'))
+		if($buttonviewFolderHandle = opendir($this->mc->config['upload_dir'] . 'modules/buttonview/pictures/'))
 		{
-			while (false !== ($currentBackgroundImg = readdir($landingpageFolderHandle)) )
+			while (false !== ($currentBackgroundImg = readdir($buttonviewFolderHandle)) )
 			{
 				if(!preg_match('#^\.|\.\.|/|\\\\$#si', $currentBackgroundImg))
 				{
@@ -118,8 +118,8 @@ class apdViewLandingpage extends apdViewBasicModule
 				}
 			}
 		}
-		closedir($landingpageFolderHandle);
-		$this->template = preg_replace('#\{FOR_LANDINGPAGE_BACKGROUND(.*?)FOR_LANDINGPAGE_BACKGROUND\}#si', $forLandingpageBackground[0], $this->template);
+		closedir($buttonviewFolderHandle);
+		$this->template = preg_replace('#\{FOR_BUTTONVIEW_BACKGROUND(.*?)FOR_BUTTONVIEW_BACKGROUND\}#si', $forLandingpageBackground[0], $this->template);
 		
 		preg_match_all('#\{FOR_VIEWS(.*?)FOR_VIEWS\}#si', $this->template, $forTabViews);
 		$forTabViews[0] = "";
@@ -166,7 +166,7 @@ class apdViewLandingpage extends apdViewBasicModule
 		if(preg_match_all('#\{FOR_BUTTONS(.*?)FOR_BUTTONS\}#si', $template, $forButtons) > 0)
 		{
 			// get buttons
-			$buttonQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_landingpage_actions WHERE view_id = ? AND view_type = ? ORDER BY action_posy, action_posx ASC", array(array($this->viewId, "i"), array($deviceId, "i")));
+			$buttonQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_buttonview_actions WHERE view_id = ? AND view_type = ? ORDER BY action_posy, action_posx ASC", array(array($this->viewId, "i"), array($deviceId, "i")));
 			$forButtons[0] = "";
 			foreach($buttonQuery->rows as $currentButton)
 			{
@@ -193,7 +193,7 @@ class apdViewLandingpage extends apdViewBasicModule
 		image
 		=====
 		*/
-		$imageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_landingpage_images WHERE view_id = ? AND view_type = ?", array(array($this->viewId, "i"), array($deviceId, "i")));
+		$imageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_buttonview_images WHERE view_id = ? AND view_type = ?", array(array($this->viewId, "i"), array($deviceId, "i")));
 		if(count($imageQuery->rows) > 0)
 		{
 			$template = preg_replace('#\{IMAGENAME\}#si', $imageQuery->rows[0]->image, $template);
