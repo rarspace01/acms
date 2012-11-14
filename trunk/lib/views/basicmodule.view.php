@@ -32,7 +32,7 @@ class apdViewBasicModule implements apdIView
 		if($this->viewId >= 0)
 		{
 			// get details for this view
-			$viewDetailsQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "views WHERE view_id = ?", array(array($this->viewId, "i")));
+			$viewDetailsQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "views AS A WHERE view_id = ?", array(array($this->viewId, "i")), array(array("views", "view_id")));
 			if(count($viewDetailsQuery->rows) > 0)
 				// if view-id was really valid, add details
 				$this->viewDetails = $viewDetailsQuery->rows[0];
@@ -118,7 +118,7 @@ class apdViewBasicModule implements apdIView
 		preg_match_all('#\{FOR_TABBARS(.*?)FOR_TABBARS\}#si', $this->template, $forTabbars);
 		$forTabbars[0] = "";
 		// select all tabbars
-		$tabbarQuery = $this->mc->database->query("SELECT tabbar_id, tabbar_name FROM " . $this->mc->config['database_pref'] . "tabbars ORDER BY tabbar_name ASC", array());
+		$tabbarQuery = $this->mc->database->query("SELECT tabbar_id, tabbar_name FROM " . $this->mc->config['database_pref'] . "tabbars AS A ORDER BY tabbar_name ASC", array(), array(array("tabbars", "tabbar_id")));
 		foreach($tabbarQuery->rows as $currentTabbar)
 		{
 			$currentTabbarTpl = preg_replace('#\{TABBARID\}#si', $currentTabbar->tabbar_id, $forTabbars[1][0]);
@@ -147,7 +147,7 @@ class apdViewBasicModule implements apdIView
 	
 		// get all languages that exist from "languages" table in database
 		// we need all columns
-		$languageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "localisations WHERE local_active = 1", array());
+		$languageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "localisations WHERE local_active = 1");
 		
 		// get template-snippet for language-listing
 		preg_match_all('#\{FOR_LANGUAGES_BASIC(.*?)FOR_LANGUAGES_BASIC\}#si', $this->template, $forLanguagesBasic);
@@ -165,7 +165,7 @@ class apdViewBasicModule implements apdIView
 			if($this->viewId >= 0)
 			{
 				// localised name in current language, load from database
-				$localiseQuery = $this->mc->database->query("SELECT local_value FROM " . $this->mc->config['database_pref'] . "localisation_keys WHERE local_id = ? AND local_key = ?", array(array($availableLanguage->local_id, "i"), array($this->viewDetails->view_name, "s")));
+				$localiseQuery = $this->mc->database->query("SELECT local_value FROM " . $this->mc->config['database_pref'] . "localisation_keys AS A WHERE local_id = ? AND local_key = ?", array(array($availableLanguage->local_id, "i"), array($this->viewDetails->view_name, "s")), array(array("localisation_keys", "local_id", "local_key")));
 				// check if localisation exists
 				$viewNameLocalised = $this->viewDetails->view_name;
 				if(count($localiseQuery->rows) > 0)
@@ -204,7 +204,7 @@ class apdViewBasicModule implements apdIView
 			$this->viewList = array();
 			
 			// query all views
-			$viewListQuery = $this->mc->database->query("SELECT view_id, view_name FROM " . $this->mc->config['database_pref'] . "views ORDER BY view_id", array());
+			$viewListQuery = $this->mc->database->query("SELECT view_id, view_name FROM " . $this->mc->config['database_pref'] . "views AS A ORDER BY view_id", array(), array(array("views", "view_id")));
 			
 			foreach($viewListQuery->rows as $currentView)
 			{

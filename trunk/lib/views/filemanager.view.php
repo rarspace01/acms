@@ -101,7 +101,7 @@ class apdViewFilemanager implements apdIView
 		else
 		{
 			$_REQUEST['path'] = stripslashes(trim($_REQUEST['path']));
-			$_REQUEST['path'] = preg_replace('#(^/?(.*?).lproj(.*?)$)|(^/?xml(.*?)$)|(^/?tabbar(.*?)$)#si', '', $_REQUEST['path']);
+			$_REQUEST['path'] = preg_replace('#(/?([a-zA-z]+?)\.lproj(.*?))|(^/?xml(.*?)$)|(^/?tabbar(.*?)$)#si', '', $_REQUEST['path']);
 			$home = $showedpath.'/'.$_REQUEST['path'];
 		}
 		$home = preg_replace('#/$#si', '', $home);
@@ -117,6 +117,7 @@ class apdViewFilemanager implements apdIView
 		preg_match_all('#\{FOR_DEVICE_ADAPTIONS(.*?)FOR_DEVICE_ADAPTIONS\}#si', $forFileList[1][0], $forDeviceSpecificFiles);
 		preg_match_all('#\{FOR_LOCALISATIONS(.*?)FOR_LOCALISATIONS\}#si', $forFileList[1][0], $forLocalisations);
 		
+		$localisationList = array();
 		$folderList = array();
 		$fileList = array();
 		// go through main-directory and localisation directories (***.lproj)
@@ -128,6 +129,8 @@ class apdViewFilemanager implements apdIView
 			{
 				$currentFolder .= '/' . $languageListQuery->rows[$i]->local_key . '.lproj';
 				$currentLanguage = $languageListQuery->rows[$i]->local_name;
+				
+				$localisationList[$languageListQuery->rows[$i]->local_name] = $languageListQuery->rows[$i]->local_key;
 			}
 				
 			if(file_exists($currentFolder))
@@ -247,7 +250,8 @@ class apdViewFilemanager implements apdIView
 					if(isset($deviceSpecificFile["generic"]))
 					{
 						$currentDeviceSpecificTpl = preg_replace('#\{DEVICEADAPTIONSIZE\}#si', $this->sizeOfFile(filesize($deviceSpecificFile["generic"][0])), $currentDeviceSpecificTpl);
-						$currentDeviceSpecificTpl = preg_replace('#\{DEVICEADAPTIONMODIFIED\}#si', date("d.m.Y H:i", filemtime($deviceSpecificFile["generic"][0])), $currentDeviceSpecificTpl);	
+						$currentDeviceSpecificTpl = preg_replace('#\{DEVICEADAPTIONMODIFIED\}#si', date("d.m.Y H:i", filemtime($deviceSpecificFile["generic"][0])), $currentDeviceSpecificTpl);
+						$currentDeviceSpecificTpl = preg_replace('#\{DEVICEADAPTIONFILENAME\}#si', basename($deviceSpecificFile["generic"][0]), $currentDeviceSpecificTpl);
 						// check if there is a generic file AND localised files for this device
 						if(count($deviceSpecificFile) > 1)
 						{
@@ -279,6 +283,7 @@ class apdViewFilemanager implements apdIView
 							$currentLocalisationTpl = preg_replace('#\{LOCALISATIONNAME\}#si', '{LANG:' . $localisationKey . '}', $forLocalisations[1][0]);
 							$currentLocalisationTpl = preg_replace('#\{LOCALISATIONSIZE\}#si', $this->sizeOfFile(filesize($localisationFile[0])), $currentLocalisationTpl);
 							$currentLocalisationTpl = preg_replace('#\{LOCALISATIONMODIFIED\}#si', date("d.m.Y H:i", filemtime($localisationFile[0])), $currentLocalisationTpl);
+							$currentLocalisationTpl = preg_replace('#\{ON_GENERIC(.*?)ON_GENERIC\}#si', '&nbsp;', $currentLocalisationTpl);
 							$localisationFileList .= $currentLocalisationTpl;
 						}
 					}
@@ -302,9 +307,12 @@ class apdViewFilemanager implements apdIView
 					if($localisationKey != "generic")
 					{
 						$currentLocalisationTpl = preg_replace('#\{LOCALISATIONNAME\}#si', '{LANG:' . $localisationKey . '}', $forLocalisations[1][0]);
+						$currentLocalisationTpl = preg_replace('#\{UNIQUEID\}#si', uniqid(), $currentLocalisationTpl);
 						$currentLocalisationTpl = preg_replace('#\{LOCALISATIONSIZE\}#si', $this->sizeOfFile(filesize($localisationFile[0])), $currentLocalisationTpl);
 						$currentLocalisationTpl = preg_replace('#\{LOCALISATIONMODIFIED\}#si', date("d.m.Y H:i", filemtime($localisationFile[0])), $currentLocalisationTpl);
 						$currentLocalisationTpl = preg_replace('#\{PADDING\}#si', '0', $currentLocalisationTpl);
+						$currentLocalisationTpl = preg_replace('#\{CURRENTPATH\}#si', $_REQUEST['path'] . '/' . $localisationList[$localisationKey] . '.lproj/', $currentLocalisationTpl);
+						$currentLocalisationTpl = preg_replace('#\{ON_GENERIC|ON_GENERIC\}#si', '', $currentLocalisationTpl);
 						$localisationFileList .= $currentLocalisationTpl;
 					}
 				}

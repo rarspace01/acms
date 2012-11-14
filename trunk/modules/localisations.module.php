@@ -60,7 +60,7 @@ class apdModuleLocalisation
 	function processForm()
 	{
 		// go through list of languages
-		$availableLanguageQuery = $this->mc->database->query("SELECT local_id FROM " . $this->mc->config['database_pref'] . "localisations", array());
+		$availableLanguageQuery = $this->mc->database->query("SELECT local_id FROM " . $this->mc->config['database_pref'] . "localisations");
 		foreach($availableLanguageQuery->rows as $lang)
 		{
 			// for every language, create an entry in _concept_text for the html-text

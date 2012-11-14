@@ -61,17 +61,8 @@ class apdModuleList extends apdModuleBasicModule
 		// set the action-file (content) to the name of the view (=name of the HTML file)
 		$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "views SET view_action = view_name WHERE view_id = ?", array(array($this->viewId, "i")));
 		
-		// first delete all existing links to simplify matters
-		// later we check for links to other views (if the command loadPage::XXXX is called)
-		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "view_links WHERE view_id_parent = ?", array(array($this->viewId, "i")));
-		
-		// delete all content for this view
-		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "concept_list_section WHERE view_id = ?", array(array($this->viewId, "i")));
-		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "concept_list_cells WHERE view_id = ?", array(array($this->viewId, "i")));
-		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "localisation_keys WHERE local_key LIKE ?", array(array('list_section_' . $this->viewId . '_%')));
-		
 		// go through list of languages
-		$availableLanguageQuery = $this->mc->database->query("SELECT local_id FROM " . $this->mc->config['database_pref'] . "localisations WHERE local_active = 1", array());
+		$availableLanguageQuery = $this->mc->database->query("SELECT local_id FROM " . $this->mc->config['database_pref'] . "localisations WHERE local_active = 1");
 		
 		$sectionCounter = 0; // "nice" section counter, do not allow gaps
 		// go through list of sections
@@ -85,10 +76,10 @@ class apdModuleList extends apdModuleBasicModule
 				
 				// update localisation-value for section-name
 				foreach($availableLanguageQuery->rows as $availableLanguage)
-					$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "localisation_keys (local_id, local_key, local_value) VALUES(?,?,?)", array(array($availableLanguage->local_id, "i"), array($sectionLanguageKey), array($_REQUEST['section_name_' . $i . '_' . $availableLanguage->local_id])));
+					$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "localisation_keys (local_id, local_key, local_value, revision) VALUES(?,?,?,?)", array(array($availableLanguage->local_id, "i"), array($sectionLanguageKey), array($_REQUEST['section_name_' . $i . '_' . $availableLanguage->local_id]), array($this->mc->config['current_revision'], "i")));
 					
 				// insert into concept_list_section
-				$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_list_section (view_id, section_id, local_key) VALUES(?,?,?)", array(array($this->viewId, "i"), array($sectionCounter, "i"), array($sectionLanguageKey, "s")));
+				$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_list_section (view_id, section_id, local_key, revision) VALUES(?,?,?,?)", array(array($this->viewId, "i"), array($sectionCounter, "i"), array($sectionLanguageKey, "s"), array($this->mc->config['current_revision'], "i")));
 					
 				$rowCounter = 0; // "nice" row counter, do not allow gaps
 				for($j = 1; $j <= $_REQUEST['section_' . $i . '_maximumrow']; $j++)
@@ -99,18 +90,18 @@ class apdModuleList extends apdModuleBasicModule
 						$sectionRowLanguageKey = 'list_section_' . $this->viewId . '_' . $sectionCounter . '_row_' . $rowCounter;
 						// update localisation-value for section-name
 						foreach($availableLanguageQuery->rows as $availableLanguage)
-							$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "localisation_keys (local_id, local_key, local_value) VALUES(?,?,?)", array(array($availableLanguage->local_id, "i"), array($sectionRowLanguageKey), array($_REQUEST['row_name_' . $i . '_' . $j . '_' . $availableLanguage->local_id])));
+							$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "localisation_keys (local_id, local_key, local_value, revision) VALUES(?,?,?,?)", array(array($availableLanguage->local_id, "i"), array($sectionRowLanguageKey), array($_REQUEST['row_name_' . $i . '_' . $j . '_' . $availableLanguage->local_id]), array($this->mc->config['current_revision'], "i")));
 							
 						// update concept_list_cells
-						$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_list_cells (view_id, section_id, cell_position, cell_content, cell_action, cell_image) VALUES(?, ?, ?, ?, ?, '')", array(array($this->viewId, "i"), array($sectionCounter, "i"), array($rowCounter, "i"), array($sectionRowLanguageKey, "s"), array($_REQUEST['loadaction_view_' . $i . '_' . $j], "i")));
+						$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_list_cells (view_id, section_id, cell_position, cell_content, cell_action, cell_image, revision) VALUES(?, ?, ?, ?, ?, '', ?)", array(array($this->viewId, "i"), array($sectionCounter, "i"), array($rowCounter, "i"), array($sectionRowLanguageKey, "s"), array($_REQUEST['loadaction_view_' . $i . '_' . $j], "i"), array($this->mc->config['current_revision'], "i")));
 					}
 				}
 			}
 		}
 		
 		// update concept type id for this view
-		$conceptQuery = $this->mc->database->query("SELECT concept_id FROM " . $this->mc->config['database_pref'] . "concepts WHERE concept_key = 'list'", array());
-		$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "views SET view_c_type = ? WHERE view_id = ?", array(array($conceptQuery->rows[0]->concept_id, "i"), array($this->viewId, "i")));
+		$conceptQuery = $this->mc->database->query("SELECT concept_id FROM " . $this->mc->config['database_pref'] . "concepts WHERE concept_key = 'list'");
+		$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "views SET view_c_type = ? WHERE view_id = ?", array(array($conceptQuery->rows[0]->concept_id, "i"), array($this->viewId, "i")), array(array("views", "view_id")));
 		
 		$this->createXmlFile();
 		
@@ -148,11 +139,11 @@ class apdModuleList extends apdModuleBasicModule
 		*/
 		$output = '<?xml version="1.0" encoding="UTF-8"?><xml>';
 			
-		$sectionQuery = $this->mc->database->query("SELECT section_id, local_key FROM " . $this->mc->config['database_pref'] . "concept_list_section WHERE view_id = ? ORDER BY section_id ASC", array(array($this->viewId, "i")));
+		$sectionQuery = $this->mc->database->query("SELECT section_id, local_key FROM " . $this->mc->config['database_pref'] . "concept_list_section AS A WHERE view_id = ? ORDER BY section_id ASC", array(array($this->viewId, "i")), array(array("concept_list_section", "view_id", "section_id")));
 		foreach($sectionQuery->rows as $currentSection)
 		{
 			$output .= '<tableviewcells section="' . $currentSection->local_key . '">';
-			$sectionRowQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_list_cells WHERE view_id = ? AND section_id = ? ORDER BY cell_position ASC", array(array($this->viewId, "i"), array($currentSection->section_id, "i")));
+			$sectionRowQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_list_cells AS A WHERE view_id = ? AND section_id = ? ORDER BY cell_position ASC", array(array($this->viewId, "i"), array($currentSection->section_id, "i")), array(array("concept_list_cells", "view_id", "section_id", "cell_position")));
 			foreach($sectionRowQuery->rows as $currentSectionRow)
 			{
 				$output .= '<row content="' . $currentSectionRow->cell_content . '"';
@@ -164,11 +155,11 @@ class apdModuleList extends apdModuleBasicModule
 						$output .= ' action="loadPage::' . $rowActionQuery->rows[0]->view_name . '&amp;YES"';
 						
 						// check if link exists in database already
-						$checkViewDestinationQuery = $this->mc->database->query("SELECT COUNT(*) as count FROM " . $this->mc->config['database_pref'] . "view_links WHERE view_id_parent = ? AND view_id_destination = ?", array(array($this->viewId, "i"), array($currentSectionRow->cell_action, "i")));
+						$checkViewDestinationQuery = $this->mc->database->query("SELECT COUNT(*) as count FROM " . $this->mc->config['database_pref'] . "view_links AS A WHERE view_id_parent = ? AND view_id_destination = ?", array(array($this->viewId, "i"), array($currentSectionRow->cell_action, "i")), array(array("view_links", "view_id_parent", "view_id_destination")));
 						if($checkViewDestinationQuery->rows[0]->count == 0)
 						{
 							// insert new link
-							$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "view_links (view_id_parent, view_id_destination) VALUES(?, ?)", array(array($this->viewId, "i"), array($currentSectionRow->cell_action, "i")));
+							$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "view_links (view_id_parent, view_id_destination, revision) VALUES(?, ?, ?)", array(array($this->viewId, "i"), array($currentSectionRow->cell_action, "i"), array($this->mc->config['current_revision'], "i")));
 						}
 					}
 				}

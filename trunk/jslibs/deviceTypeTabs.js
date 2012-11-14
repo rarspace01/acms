@@ -17,8 +17,8 @@ function changeTab(type)
 		}
 		
 		document.getElementById('device_type_tab_' + type).className += ' content_tab_active';
-		document.getElementById('content_edit_area_' + type).style.display = 'block';
 	}
+	document.getElementById('content_edit_area_' + type).style.display = 'block';
 	
 	if(typeof changeTabCustom == 'function')
 	{

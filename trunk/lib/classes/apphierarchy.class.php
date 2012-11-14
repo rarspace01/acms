@@ -55,7 +55,7 @@ class apdAppHierarchy
 		$tabbars = array();
 		$tabbarsInactive = array();
 		// get all tabbars
-		$tabbarsQuery = $this->mc->database->query("SELECT tabbar_id, tabbar_name, tabbar_active FROM " . $this->mc->config['database_pref'] . "tabbars ORDER BY tabbar_name ASC", array());
+		$tabbarsQuery = $this->mc->database->query("SELECT tabbar_id, tabbar_name, tabbar_active FROM " . $this->mc->config['database_pref'] . "tabbars AS A WHERE 1 ORDER BY tabbar_name ASC", array(), array(array("tabbars", "tabbar_id")));
 		// go through list of tabbars
 		foreach($tabbarsQuery->rows as $tabbarRow)
 		{
@@ -67,7 +67,7 @@ class apdAppHierarchy
 			$currentTabbar['tabs'] = array();
 				
 			// get different tabs
-			$tabbarTabQuery = $this->mc->database->query("SELECT tab_view, tab_default, tab_position FROM " . $this->mc->config['database_pref'] . "tabs WHERE tabbar_id = ? ORDER BY tab_position ASC", array(array($tabbarRow->tabbar_id, "i")));
+			$tabbarTabQuery = $this->mc->database->query("SELECT tab_view, tab_default, tab_position FROM " . $this->mc->config['database_pref'] . "tabs AS A WHERE A.tabbar_id = ? ORDER BY tab_position ASC", array(array($tabbarRow->tabbar_id, "i")), array(array("tabs", "tabbar_id", "tab_id")));
 			// go through list of tabs
 			foreach($tabbarTabQuery->rows as $tabbarTab)
 			{
@@ -113,7 +113,7 @@ class apdAppHierarchy
 			$dummyTab['tabid'] = -1;
 			
 			// get start view, as this is our starting point
-			$startviewQuery = $this->mc->database->query("SELECT view_id FROM " . $this->mc->config['database_pref'] . "views WHERE view_start = 1 ORDER BY view_id ASC LIMIT 0,1", array());
+			$startviewQuery = $this->mc->database->query("SELECT view_id FROM " . $this->mc->config['database_pref'] . "views AS A WHERE view_start = 1 ORDER BY view_id ASC LIMIT 0,1", array(), array(array("views", "view_id")));
 			$dummyTab['views'] = $this->createViewHierarchy($startviewQuery->rows[0]->view_id);
 
 			// add dummytab to dummytabbar
@@ -132,7 +132,7 @@ class apdAppHierarchy
 		---------
 		*/		
 		$this->inactiveViews = array();
-		$inactiveViewsQuery = $this->mc->database->query("SELECT view_id FROM " . $this->mc->config['database_pref'] . "views", array());
+		$inactiveViewsQuery = $this->mc->database->query("SELECT view_id FROM " . $this->mc->config['database_pref'] . "views AS A WHERE 1", array(), array(array("views", "view_id")));
 		foreach($inactiveViewsQuery->rows as $currentInactiveView)
 		{
 			if($this->isInactiveView($currentInactiveView->view_id))
@@ -179,7 +179,7 @@ class apdAppHierarchy
 		$returnArray = array();
 	
 		// read out information about current view
-		$viewDetailQuery = $this->mc->database->query("SELECT view_id, view_c_type, view_name, view_navigationbar, view_start FROM " . $this->mc->config['database_pref'] . "views WHERE view_id = ?", array(array($viewId, "i")));
+		$viewDetailQuery = $this->mc->database->query("SELECT view_id, view_c_type, view_name, view_navigationbar, view_start FROM " . $this->mc->config['database_pref'] . "views AS A WHERE view_id = ?", array(array($viewId, "i")), array(array("views", "view_id")));
 		
 		// concept type (ID in database)
 		$returnArray['view_type'] = $viewDetailQuery->rows[0]->view_c_type;
@@ -193,7 +193,7 @@ class apdAppHierarchy
 		$parents[] = $viewDetailQuery->rows[0]->view_id;
 		
 		// now read out all children views
-		$childrenQuery = $this->mc->database->query("SELECT view_id_destination FROM " . $this->mc->config['database_pref'] . "view_links WHERE view_id_parent = ?", array(array($viewId, "i")));
+		$childrenQuery = $this->mc->database->query("SELECT view_id_destination FROM " . $this->mc->config['database_pref'] . "view_links AS A WHERE view_id_parent = ?", array(array($viewId, "i")), array(array("view_links", "view_id_parent", "view_id_destination")));
 		if(count($childrenQuery->rows) > 0)
 		{
 			$returnArray['view_children'] = array();
@@ -333,7 +333,7 @@ class apdAppHierarchy
 	*/
 	function checkForParentsPath($currentDestinationView)
 	{
-		$viewParentsQuery = $this->mc->database->query("SELECT A.view_id_parent AS parent_id, B.view_start AS start FROM " . $this->mc->config['database_pref'] . "view_links AS A, " . $this->mc->config['database_pref'] . "views AS B WHERE A.view_id_destination = ? AND A.view_id_parent = B.view_id", array(array($currentDestinationView, "i")));
+		$viewParentsQuery = $this->mc->database->query("SELECT A.view_id_parent AS parent_id, B.view_start AS start FROM " . $this->mc->config['database_pref'] . "view_links AS A, " . $this->mc->config['database_pref'] . "views AS B WHERE A.view_id_destination = ? AND A.view_id_parent = B.view_id", array(array($currentDestinationView, "i")), array(array("view_links", "view_id_parent", "view_id_destination"), array("views", "view_id")));
 	
 		// if current view does not have any parents its a dead end
 		if(count($viewParentsQuery->rows) == 0)

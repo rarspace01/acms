@@ -76,7 +76,7 @@ class apdViewLocalisations implements apdIView
 		preg_match_all('#\{FOR_LANGUAGES(.*?)FOR_LANGUAGES\}#si', $this->template, $forLanguages);
 		$forLanguages[0] = "";
 		
-		$availableLocalisations = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "localisations ORDER BY local_id ASC", array());
+		$availableLocalisations = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "localisations ORDER BY local_id ASC");
 		foreach($availableLocalisations->rows as $currentLocale)
 		{
 			$currentLanguageTpl = preg_replace('#\{LANGUAGE\}#si', $this->mc->language->getLocalisation($currentLocale->local_name), $forLanguages[1][0]);

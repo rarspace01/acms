@@ -83,7 +83,7 @@ class apdViewButtonview extends apdViewBasicModule
 		=============
 		*/		
 		// load all languages from database, these are the columns in the language-table
-		$languageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "localisations WHERE local_active = 1 ORDER BY local_id ASC", array());		
+		$languageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "localisations WHERE local_active = 1 ORDER BY local_id ASC");		
 		preg_match_all('#\{FOR_LANGUAGES(.*?)FOR_LANGUAGES\}#si', $this->template, $forLanguages);
 		$forLanguages[0] = ""; $languageList = "";
 		
@@ -105,21 +105,21 @@ class apdViewButtonview extends apdViewBasicModule
 		
 		$this->template = $this->mc->devicetypes->viewDeviceTemplates($this->template, $this);
 		
-		preg_match_all('#\{FOR_BUTTONVIEW_BACKGROUND(.*?)FOR_BUTTONVIEW_BACKGROUND\}#si', $this->template, $forLandingpageBackground);
-		$forLandingpageBackground[0] = "";
+		preg_match_all('#\{FOR_BUTTONVIEW_BACKGROUND(.*?)FOR_BUTTONVIEW_BACKGROUND\}#si', $this->template, $forButtonviewBackground);
+		$forButtonviewBackground[0] = "";
 		if($buttonviewFolderHandle = opendir($this->mc->config['upload_dir'] . 'modules/buttonview/pictures/'))
 		{
 			while (false !== ($currentBackgroundImg = readdir($buttonviewFolderHandle)) )
 			{
 				if(!preg_match('#^\.|\.\.|/|\\\\$#si', $currentBackgroundImg))
 				{
-					$currentBackgroundTpl = preg_replace('#\{IMAGENAME\}#si', $currentBackgroundImg, $forLandingpageBackground[1][0]);
-					$forLandingpageBackground[0] .= $currentBackgroundTpl;
+					$currentBackgroundTpl = preg_replace('#\{IMAGENAME\}#si', $currentBackgroundImg, $forButtonviewBackground[1][0]);
+					$forButtonviewBackground[0] .= $currentBackgroundTpl;
 				}
 			}
 		}
 		closedir($buttonviewFolderHandle);
-		$this->template = preg_replace('#\{FOR_BUTTONVIEW_BACKGROUND(.*?)FOR_BUTTONVIEW_BACKGROUND\}#si', $forLandingpageBackground[0], $this->template);
+		$this->template = preg_replace('#\{FOR_BUTTONVIEW_BACKGROUND(.*?)FOR_BUTTONVIEW_BACKGROUND\}#si', $forButtonviewBackground[0], $this->template);
 		
 		preg_match_all('#\{FOR_VIEWS(.*?)FOR_VIEWS\}#si', $this->template, $forTabViews);
 		$forTabViews[0] = "";
@@ -166,7 +166,7 @@ class apdViewButtonview extends apdViewBasicModule
 		if(preg_match_all('#\{FOR_BUTTONS(.*?)FOR_BUTTONS\}#si', $template, $forButtons) > 0)
 		{
 			// get buttons
-			$buttonQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_buttonview_actions WHERE view_id = ? AND view_type = ? ORDER BY action_posy, action_posx ASC", array(array($this->viewId, "i"), array($deviceId, "i")));
+			$buttonQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_buttonview_actions AS A WHERE view_id = ? AND view_type = ? ORDER BY action_posy, action_posx ASC", array(array($this->viewId, "i"), array($deviceId, "i")), array(array("concept_buttonview_actions", "view_id", "view_type", "action_posx", "action_posy", "action_width", "action_height")));
 			$forButtons[0] = "";
 			foreach($buttonQuery->rows as $currentButton)
 			{
@@ -177,7 +177,7 @@ class apdViewButtonview extends apdViewBasicModule
 				$currentButtonTpl = preg_replace('#\{BUTTON_ACTION\}#si', $currentButton->action_command, $currentButtonTpl);
 				$currentButtonTitleNames = "";
 				// get all localised names for this section
-				$buttonTitleQuery = $this->mc->database->query("SELECT local_value FROM " . $this->mc->config['database_pref'] . "localisation_keys WHERE local_key = ? ORDER BY local_id ASC", array(array($currentButton->action_title)));
+				$buttonTitleQuery = $this->mc->database->query("SELECT local_value FROM " . $this->mc->config['database_pref'] . "localisation_keys AS A WHERE local_key = ? ORDER BY local_id ASC", array(array($currentButton->action_title)), array(array("localisation_keys", "local_id", "local_key")));
 				for($i = 0; $i < count($buttonTitleQuery->rows); $i++)
 				{
 					$currentButtonTitleNames .= '"' . $buttonTitleQuery->rows[$i]->local_value . '"' . ( ($i < (count($buttonTitleQuery->rows)-1)) ? ',' : '');
@@ -193,18 +193,18 @@ class apdViewButtonview extends apdViewBasicModule
 		image
 		=====
 		*/
-		$imageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_buttonview_images WHERE view_id = ? AND view_type = ?", array(array($this->viewId, "i"), array($deviceId, "i")));
+		$imageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_buttonview_images WHERE view_id = ? AND view_type = ?", array(array($this->viewId, "i"), array($deviceId, "i")), array(array("concept_buttonview_images", "view_id", "view_type")));
 		if(count($imageQuery->rows) > 0)
 		{
 			$template = preg_replace('#\{IMAGENAME\}#si', $imageQuery->rows[0]->image, $template);
-			$template = preg_replace('#\{DEVICE_TYPE_EXISTS\}#si', 'true', $template);
 			$template = preg_replace('#\!\{DEVICE_TYPE_EXISTS\}#si', 'false', $template);
+			$template = preg_replace('#\{DEVICE_TYPE_EXISTS\}#si', 'true', $template);
 		}
 		else
 		{
 			$template = preg_replace('#\{IMAGENAME\}#si', '', $template);
-			$template = preg_replace('#\{DEVICE_TYPE_EXISTS\}#si', 'false', $template);
 			$template = preg_replace('#\!\{DEVICE_TYPE_EXISTS\}#si', 'true', $template);
+			$template = preg_replace('#\{DEVICE_TYPE_EXISTS\}#si', 'false', $template);
 		}
 		return $template;
 	}

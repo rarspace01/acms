@@ -17,6 +17,7 @@
 var templatePath = 'templates/default/';
 var actionContainerClass = 'imageaction';
 var previewImageClass = 'previewimage';
+var actionButtonTitleName = 'button_view_';
 
 var textActionContainer = '';
 var textActionHelpContainer = '';
@@ -257,7 +258,7 @@ function createAction(divContainer, dimension, command, title)
 			var divButtonTitleInputField = document.createElement('input');
 			divButtonTitleInputField.setAttribute('class', 'content_form_input_field');
 			divButtonTitleInputField.setAttribute('type', 'text');
-			divButtonTitleInputField.setAttribute('name', 'landingpage_view_' + currentButtonId + '_' + currentViewType + '_' + languages[i]["id"]);
+			divButtonTitleInputField.setAttribute('name', actionButtonTitleName + currentButtonId + '_' + currentViewType + '_' + languages[i]["id"]);
 			divButtonTitleInputField.setAttribute('value', title[i]);
 			divButtonTitleInput.appendChild(divButtonTitleInputField);
 			

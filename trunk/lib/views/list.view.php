@@ -83,7 +83,7 @@ class apdViewList extends apdViewBasicModule
 		=============
 		*/		
 		// load all languages from database, these are the columns in the language-table
-		$languageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "localisations WHERE local_active = 1 ORDER BY local_id ASC", array());		
+		$languageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "localisations WHERE local_active = 1 ORDER BY local_id ASC");		
 		preg_match_all('#\{FOR_LANGUAGES(.*?)FOR_LANGUAGES\}#si', $this->template, $forLanguages);
 		$forLanguages[0] = "";
 		
@@ -111,7 +111,7 @@ class apdViewList extends apdViewBasicModule
 			========
 			*/
 			// get sections
-			$sectionQuery = $this->mc->database->query("SELECT section_id, local_key FROM " . $this->mc->config['database_pref'] . "concept_list_section WHERE view_id = ?", array(array($this->viewId, "i")));
+			$sectionQuery = $this->mc->database->query("SELECT section_id, local_key FROM " . $this->mc->config['database_pref'] . "concept_list_section AS A WHERE view_id = ?", array(array($this->viewId, "i")), array(array("concept_list_section", "view_id", "section_id")));
 			preg_match_all('#\{FOR_SECTIONS(.*?)FOR_SECTIONS\}#si', $this->template, $forSections);
 			$forSections[0] = "";
 			foreach($sectionQuery->rows as $currentSection)
@@ -120,7 +120,7 @@ class apdViewList extends apdViewBasicModule
 				$currentSectionTpl = preg_replace('#\{SECTION_ID\}#si', $currentSection->section_id, $forSections[1][0]);
 				$currentSectionNamesArray = "";
 				// get all localised names for this section
-				$sectionNameQuery = $this->mc->database->query("SELECT local_value FROM " . $this->mc->config['database_pref'] . "localisation_keys WHERE local_key = ? ORDER BY local_id ASC", array(array($currentSection->local_key)));
+				$sectionNameQuery = $this->mc->database->query("SELECT local_value FROM " . $this->mc->config['database_pref'] . "localisation_keys AS A WHERE local_key = ? ORDER BY local_id ASC", array(array($currentSection->local_key)), array(array("localisation_keys", "local_id", "local_key")));
 				for($i = 0; $i < count($sectionNameQuery->rows); $i++)
 				{
 					$currentSectionNamesArray .= '"' . $sectionNameQuery->rows[$i]->local_value . '"' . ( ($i < (count($sectionNameQuery->rows)-1)) ? ',' : '');
@@ -136,7 +136,7 @@ class apdViewList extends apdViewBasicModule
 			========
 			*/
 			// get rows
-			$sectionRowQuery = $this->mc->database->query("SELECT section_id, cell_position, cell_content, cell_action, cell_image FROM " . $this->mc->config['database_pref'] . "concept_list_cells WHERE view_id = ? ORDER BY section_id, cell_position ASC", array(array($this->viewId, "i")));
+			$sectionRowQuery = $this->mc->database->query("SELECT section_id, cell_position, cell_content, cell_action, cell_image FROM " . $this->mc->config['database_pref'] . "concept_list_cells AS A WHERE view_id = ? ORDER BY section_id, cell_position ASC", array(array($this->viewId, "i")), array(array("concept_list_cells", "view_id", "section_id", "cell_position")));
 			preg_match_all('#\{FOR_SECTIONROWS(.*?)FOR_SECTIONROWS\}#si', $this->template, $forSectionRows);
 			$forSectionRows[0] = "";
 			foreach($sectionRowQuery->rows as $currentSectionRow)
@@ -147,7 +147,7 @@ class apdViewList extends apdViewBasicModule
 				$currentSectionRowTpl = preg_replace('#\{ROW_ACTION\}#si', '"' . $currentSectionRow->cell_action . '"', $currentSectionRowTpl);
 				$currentSectionNamesArray = "";
 				// get all localised names for this section
-				$sectionNameQuery = $this->mc->database->query("SELECT local_value FROM " . $this->mc->config['database_pref'] . "localisation_keys WHERE local_key = ? ORDER BY local_id ASC", array(array($currentSectionRow->cell_content)));
+				$sectionNameQuery = $this->mc->database->query("SELECT local_value FROM " . $this->mc->config['database_pref'] . "localisation_keys AS A WHERE local_key = ? ORDER BY local_id ASC", array(array($currentSectionRow->cell_content)), array(array("localisation_keys", "local_id", "local_key")));
 				for($i = 0; $i < count($sectionNameQuery->rows); $i++)
 				{
 					$currentSectionNamesArray .= '"' . $sectionNameQuery->rows[$i]->local_value . '"' . (($i < (count($sectionNameQuery->rows)-1)) ? ',' : '');

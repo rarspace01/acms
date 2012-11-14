@@ -142,7 +142,7 @@ class apdViewZoomimage extends apdViewBasicModule
 		if(preg_match_all('#\{FOR_BUTTONS(.*?)FOR_BUTTONS\}#si', $template, $forButtons) > 0)
 		{
 			// get buttons
-			$buttonQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_zoommap_actions WHERE view_id = ? AND view_type = ? ORDER BY action_posy, action_posx ASC", array(array($this->viewId, "i"), array($deviceId, "i")));
+			$buttonQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_zoommap_actions AS A WHERE view_id = ? AND view_type = ? ORDER BY action_posy, action_posx ASC", array(array($this->viewId, "i"), array($deviceId, "i")), array(array("concept_zoommap_actions", "view_id", "view_type", "action_posx", "action_posy", "action_width", "action_height")));
 			$forButtons[0] = "";
 			foreach($buttonQuery->rows as $currentButton)
 			{
@@ -161,18 +161,18 @@ class apdViewZoomimage extends apdViewBasicModule
 		image
 		=====
 		*/
-		$imageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_zoommap_images WHERE view_id = ? AND view_type = ?", array(array($this->viewId, "i"), array($deviceId, "i")));
+		$imageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_zoommap_images AS A WHERE view_id = ? AND view_type = ?", array(array($this->viewId, "i"), array($deviceId, "i")), array(array("concept_zoommap_images", "view_id", "view_type")));
 		if(count($imageQuery->rows) > 0)
 		{
 			$template = preg_replace('#\{IMAGENAME\}#si', $imageQuery->rows[0]->image, $template);
-			$template = preg_replace('#\{DEVICE_TYPE_EXISTS\}#si', 'true', $template);
 			$template = preg_replace('#\!\{DEVICE_TYPE_EXISTS\}#si', 'false', $template);
+			$template = preg_replace('#\{DEVICE_TYPE_EXISTS\}#si', 'true', $template);
 		}
 		else
 		{
 			$template = preg_replace('#\{IMAGENAME\}#si', '', $template);
-			$template = preg_replace('#\{DEVICE_TYPE_EXISTS\}#si', 'false', $template);
 			$template = preg_replace('#\!\{DEVICE_TYPE_EXISTS\}#si', 'true', $template);
+			$template = preg_replace('#\{DEVICE_TYPE_EXISTS\}#si', 'false', $template);
 		}
 		return $template;
 	}

@@ -51,7 +51,7 @@ class apdLanguage
 		else
 		{
 			// if not, check if it is user-generated content
-			$userLocalisationQuery = $this->mc->database->query("SELECT A.local_value AS value FROM " . $this->mc->config['database_pref'] . "localisation_keys AS A, " . $this->mc->config['database_pref'] . "localisations AS B WHERE A.local_key = ? AND A.local_id = B.local_id AND B.local_name = ?", array(array($key, "s"), array($this->language, "s")));
+			$userLocalisationQuery = $this->mc->database->query("SELECT A.local_value AS value FROM " . $this->mc->config['database_pref'] . "localisation_keys AS A, " . $this->mc->config['database_pref'] . "localisations AS B WHERE A.local_key = ? AND A.local_id = B.local_id AND B.local_name = ?", array(array($key, "s"), array($this->language, "s")), array(array("localisation_keys", "local_id", "local_key")));
 			if(count($userLocalisationQuery->rows) > 0)
 				return $userLocalisationQuery->rows[0]->value;
 		}
