@@ -50,13 +50,13 @@ class apdModuleTabBar
 		// load tabbar details and tabs
 		if($this->tabBarId >= 0)
 		{
-			$tabBarDetailQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "tabbars WHERE tabbar_id = ?", array(array($this->tabBarId, "i")));
+			$tabBarDetailQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "tabbars AS A WHERE tabbar_id = ?", array(array($this->tabBarId, "i")), array(array("tabbars", "tabbar_id")));
 			if(count($tabBarDetailQuery->rows) > 0)
 			{
 				$this->tabBarDetails = $tabBarDetailQuery->rows[0];
 				
 				$this->tabs = array();				
-				$tabBarTabsQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "tabs WHERE tabbar_id = ?", array(array($this->tabBarId, "i")));
+				$tabBarTabsQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "tabs AS A WHERE tabbar_id = ?", array(array($this->tabBarId, "i")), array(array("tabs", "tabbar_id", "tab_id")));
 				foreach($tabBarTabsQuery->rows as $currentTab)
 				{
 					$this->tabs[] = $currentTab;
@@ -77,6 +77,11 @@ class apdModuleTabBar
 	*/
 	function processForm()
 	{
+			
+		$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "revisions SET revision_active = max_revision + 1, max_revision = max_revision + 1");
+		$maximumRevisionIdQuery = $this->mc->database->query("SELECT max_revision FROM " . $this->mc->config['database_pref'] . "revisions");
+		$this->mc->config['current_revision'] = $maximumRevisionIdQuery->rows[0]->max_revision;
+			
 		/*
 		===========
 		insert mode
@@ -87,9 +92,6 @@ class apdModuleTabBar
 			// get new tabbar-id
 			$maximumTabBarIdQuery = $this->mc->database->query("SELECT MAX(tabbar_id) AS max_id FROM " . $this->mc->config['database_pref'] . "tabbars", array());
 			$maximumTabBarId = $maximumTabBarIdQuery->rows[0]->max_id + 1;
-			
-			// create entry in _tabbars
-			$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "tabbars (tabbar_id) VALUES(?)", array(array($maximumTabBarId, "i")));
 			
 			$this->tabBarId = $maximumTabBarId;
 		}
@@ -103,12 +105,9 @@ class apdModuleTabBar
 		{
 			$this->cleanUpDirectory();
 		
-			// set the tabbar-name
-			$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "tabbars SET tabbar_name = ? WHERE tabbar_id = ?", array(array($_REQUEST['tabbar_name']), array($this->tabBarId, "i")));
-			
-			// update tabbar tabs
-			// to simplify matters, first delete all current tabs
-			$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "tabs WHERE tabbar_id = ?", array(array($this->tabBarId, "i")));
+		
+			// create entry in _tabbars
+			$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "tabbars (tabbar_id, tabbar_name, revision) VALUES(?, ?, ?)", array(array($maximumTabBarId, "i"), array($_REQUEST['tabbar_name']), array($this->mc->config['current_revision'], "i")));
 			
 			// now insert new tabs from POST form
 			$dataIdCount = 1; // will hold the current tab-id for database
@@ -131,7 +130,7 @@ class apdModuleTabBar
 					}
 					
 					// insert record in database
-					$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "tabs (tabbar_id, tab_id, tab_position, tab_view, tab_icon) VALUES(?,?,?,?,?)", array(array($this->tabBarId, "i"), array($dataIdCount, "i"), array($dataIdCount, "i"), array($_REQUEST['tabbar_view_' . $frontIdCount], "i") , array($normalTabbarIcon)));
+					$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "tabs (tabbar_id, tab_id, tab_position, tab_view, tab_icon, revision) VALUES(?,?,?,?,?,?)", array(array($this->tabBarId, "i"), array($dataIdCount, "i"), array($dataIdCount, "i"), array($_REQUEST['tabbar_view_' . $frontIdCount], "i") , array($normalTabbarIcon), array($this->mc->config['current_revision'], "i")));
 					// check if this tab is set to default tab
 					if(isset($_REQUEST['tabbar_view_default_' .$frontIdCount]) && $_REQUEST['tabbar_view_default_' .$frontIdCount] == 'front')
 					{
@@ -145,14 +144,14 @@ class apdModuleTabBar
 				$frontIdCount++;
 			}
 			// update default tab
-			$this->mc->database->query("UPDATE ". $this->mc->config['database_pref'] . "tabs SET tab_default = 1 WHERE tabbar_id = ? AND tab_id = ?", array(array($this->tabBarId, "i"), array($defaultTab, "i")));
+			$this->mc->database->query("UPDATE ". $this->mc->config['database_pref'] . "tabs SET tab_default = 1 WHERE tabbar_id = ? AND tab_id = ?", array(array($this->tabBarId, "i"), array($defaultTab, "i")), array(array("tabs", "tabbar_id", "tab_id")));
 			
 			// check if tabbar is currently active
 			// (at least one active view that initialises the tabbar)
 			$tabbarIsActive = false;
 				
 			// first check all views that are initialised with the old tabbar
-			$viewTabbarQuery = $this->mc->database->query("SELECT view_id, view_start FROM " . $this->mc->config['database_pref'] . "views WHERE view_tabbar = ?", array(array($this->tabBarId, "i")));
+			$viewTabbarQuery = $this->mc->database->query("SELECT view_id, view_start FROM " . $this->mc->config['database_pref'] . "views AS A WHERE view_tabbar = ?", array(array($this->tabBarId, "i")), array(array("views", "view_id")));
 			foreach($viewTabbarQuery->rows as $currentViewTabbar)
 			{
 				// now check if this view is active (somehow accessible from the startpage)
@@ -171,7 +170,7 @@ class apdModuleTabBar
 					break;
 			}
 				
-			$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "tabbars SET tabbar_active = ? WHERE tabbar_id = ?", array(array($tabbarIsActive?1:0, "i"), array($this->tabBarId, "i")));
+			$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "tabbars AS A SET tabbar_active = ? WHERE tabbar_id = ?", array(array($tabbarIsActive?1:0, "i"), array($this->tabBarId, "i")), array(array("tabbars", "tabbar_id")));
 		}
 		
 		// re-create main xml file and refresh filelist
@@ -181,7 +180,7 @@ class apdModuleTabBar
 		$fileManagerObj = new apdModuleFilemanager($this->mc);
 		$fileManagerObj->refreshFilelist();
 		
-		header("Location: index.php?m=tabbar&view_id=" . $this->tabBarId);
+		//header("Location: index.php?m=tabbar&view_id=" . $this->tabBarId);
 	}
 	
 	/**
@@ -198,7 +197,7 @@ class apdModuleTabBar
 	*/
 	function checkForParentsPath($currentDestinationView)
 	{
-		$viewParentsQuery = $this->mc->database->query("SELECT A.view_id_parent AS parent_id, B.view_start AS start FROM " . $this->mc->config['database_pref'] . "view_links AS A, " . $this->mc->config['database_pref'] . "views AS B WHERE A.view_id_destination = ? AND A.view_id_parent = B.view_id", array(array($currentDestinationView, "i")));
+		$viewParentsQuery = $this->mc->database->query("SELECT A.view_id_parent AS parent_id, B.view_start AS start FROM " . $this->mc->config['database_pref'] . "view_links AS A, " . $this->mc->config['database_pref'] . "views AS B WHERE A.view_id_destination = ? AND A.view_id_parent = B.view_id", array(array($currentDestinationView, "i")), array(array("view_links", "view_id_parent", "view_id_destination"), array("views", "view_id")));
 	
 		// if current view does not have any parents its a dead end
 		if(count($viewParentsQuery->rows) == 0)

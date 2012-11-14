@@ -130,6 +130,8 @@ class apdTemplate
 	{
 		// replace language-variables
 		$this->template = preg_replace('#\{LANG:(.+?)\}#se', '$this->mc->language->getLocalisation("$1")', $this->template);
+		// replace language-variables
+		$this->template = preg_replace('#\{CONFIG_UPLOADDIR\}#si', $this->mc->config['upload_dir'], $this->template);
 	}
 	
 	/**

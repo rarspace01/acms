@@ -8,7 +8,7 @@
  
  var emptyQueueAction;
  var fileList;
- var currentUploadFileName;
+ var currentUploadFileName = false;
 
 (function($)
 {

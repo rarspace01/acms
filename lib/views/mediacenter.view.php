@@ -28,14 +28,14 @@ function initCurrentView($mainContainer)
 {
 	// check if a view-id was given
 	// will call parent constructor!
-	return new apdViewPresentation($mainContainer,
+	return new apdViewMediacenter($mainContainer,
 		(
 		(isset($_REQUEST['view_id']) && intval($_REQUEST['view_id']) >= 0)
 			? intval($_REQUEST['view_id']):-1
 		));
 }
 
-class apdViewPresentation extends apdViewBasicModule
+class apdViewMediacenter extends apdViewBasicModule
 {
 	/**
 	* function - initTemplate
@@ -48,7 +48,7 @@ class apdViewPresentation extends apdViewBasicModule
 	*/
 	function initTemplate()
 	{
-		include('templates/' . $this->mc->config['template'] . '/modules/presentation/presentation.html');
+		include('templates/' . $this->mc->config['template'] . '/modules/mediacenter/mediacenter.html');
 		$this->template = ob_get_contents();
 		ob_clean();
 	}
@@ -77,8 +77,8 @@ class apdViewPresentation extends apdViewBasicModule
 		parent::initTemplate();
 		$this->template = preg_replace('#\{BASIC_INFO\}#si', parent::printTemplate(), $currentTemplate);
 		
-		// TODO: print images
-		$currentImagesQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_presentation AS A WHERE view_id = ?", array(array($this->viewId, "i")), array(array("concept_presentation", "view_id", "image_position")));
+		// TODO: print videos
+		$currentVideosQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_mediacenter AS A WHERE view_id = ?", array(array($this->viewId, "i")), array(array("concept_mediacenter", "view_id", "view_name")));
 		
 		/*
 		=============
@@ -86,35 +86,35 @@ class apdViewPresentation extends apdViewBasicModule
 		=============
 		*/
 		// set of PDFs
-		$pdfSet = array();
-		if($mainFolderHandle = opendir($this->mc->config['upload_dir'] . '/root'))
+		$videoSet = array();
+		if($mainFolderHandle = opendir($this->mc->config['upload_dir'] . '/root/videos'))
 		{
-			while (false !== ($currentPdf = readdir($mainFolderHandle)) )
+			while (false !== ($currentVideo = readdir($mainFolderHandle)) )
 			{
-				if(preg_match('#^(.*?)\.pdf$#si', $currentPdf))
-					$pdfSet[] = $currentPdf;
+				if(preg_match('#^(.*?)\.(mp4|avi|mpg|mpeg|m4v)$#si', $currentVideo))
+					$videoSet[] = $currentVideo;
 			}
 		}
 		closedir($mainFolderHandle);
-		reset($pdfSet);
-		sort($pdfSet);
+		reset($videoSet);
+		sort($videoSet);
 		
-		preg_match_all('#\{FOR_PDFS(.*?)FOR_PDFS\}#si', $this->template, $forPdfsTemplate);
-		$forPdfsTemplate[0] = "";
-		foreach($pdfSet as $currentPdf)
+		preg_match_all('#\{FOR_VIDEOS(.*?)FOR_VIDEOS\}#si', $this->template, $forVideosTemplate);
+		$forVideosTemplate[0] = "";
+		foreach($videoSet as $currentVideo)
 		{
-			$currentPdfTpl = preg_replace('#\{PDFNAME\}#si', $currentPdf, $forPdfsTemplate[1][0]);
-			if(count($currentImagesQuery) > 0 && $currentImagesQuery->rows[0]->image_path == $currentPdf)
+			$currentVideoTpl = preg_replace('#\{VIDEONAME\}#si', $currentVideo, $forVideosTemplate[1][0]);
+			if(count($currentVideosQuery) > 0 && $currentVideosQuery->rows[0]->video_name == $currentVideo)
 			{
-				$currentPdfTpl = preg_replace('#\{HTMLSELECTED\}#si', 'selected', $currentPdfTpl);
+				$currentVideoTpl = preg_replace('#\{HTMLSELECTED\}#si', 'selected', $currentVideoTpl);
 			}
 			else
 			{
-				$currentPdfTpl = preg_replace('#\{HTMLSELECTED\}#si', '', $currentPdfTpl);
+				$currentVideoTpl = preg_replace('#\{HTMLSELECTED\}#si', '', $currentVideoTpl);
 			}
-			$forPdfsTemplate[0] .= $currentPdfTpl;
+			$forVideosTemplate[0] .= $currentVideoTpl;
 		}
-		$this->template = preg_replace('#\{FOR_PDFS(.*?)FOR_PDFS\}#si', $forPdfsTemplate[0], $this->template);
+		$this->template = preg_replace('#\{FOR_VIDEOS(.*?)FOR_VIDEOS\}#si', $forVideosTemplate[0], $this->template);
 		
 		return $this->template;
 	}

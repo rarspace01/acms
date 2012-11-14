@@ -64,17 +64,9 @@ class apdModuleZoomimage extends apdModuleBasicModule
 		
 		// set the action-file (content) to the name of the view (=name of the HTML file)
 		$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "views SET view_action = view_name WHERE view_id = ?", array(array($this->viewId, "i")));
-		
-		// first delete all existing links to simplify matters
-		// later we check for links to other views (if the command loadPage::XXXX is called)
-		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "view_links WHERE view_id_parent = ?", array(array($this->viewId, "i")));
-		
-		// delete all content for this view
-		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "concept_zoommap_images WHERE view_id = ?", array(array($this->viewId, "i")));
-		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "concept_zoommap_actions WHERE view_id = ?", array(array($this->viewId, "i")));
 				
 		// go through list of sections
-		$viewTypesQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "devices", array());
+		$viewTypesQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "devices");
 		foreach($viewTypesQuery->rows as $currentViewType)
 		{
 			$buttonCounter = 0; // "nice" button counter, do not allow gaps
@@ -93,29 +85,29 @@ class apdModuleZoomimage extends apdModuleBasicModule
 							$actionCommandValue = ($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_key] > 0) ? $_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_key] : $_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_key . '_custom'];
 							
 							// insert into concept_landingpage_actions
-							$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_zoommap_actions (view_id, view_type, action_posx, action_posy, action_width, action_height, action_command) VALUES(?,?,?,?,?,?,?)", array(array($this->viewId, "i"), array($currentViewType->device_id, "i"), array($_REQUEST['button_left_' . $i . '_' . $currentViewType->device_key], "i"), array($_REQUEST['button_top_' . $i . '_' . $currentViewType->device_key], "i"), array($_REQUEST['button_width_' . $i . '_' . $currentViewType->device_key], "i"), array($_REQUEST['button_height_' . $i . '_' . $currentViewType->device_key], "i"), array($actionCommandValue, "s")));
+							$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_zoommap_actions (view_id, view_type, action_posx, action_posy, action_width, action_height, action_command, revision) VALUES(?,?,?,?,?,?,?,?)", array(array($this->viewId, "i"), array($currentViewType->device_id, "i"), array($_REQUEST['button_left_' . $i . '_' . $currentViewType->device_key], "i"), array($_REQUEST['button_top_' . $i . '_' . $currentViewType->device_key], "i"), array($_REQUEST['button_width_' . $i . '_' . $currentViewType->device_key], "i"), array($_REQUEST['button_height_' . $i . '_' . $currentViewType->device_key], "i"), array($actionCommandValue, "s"), array($this->mc->config['current_revision'], "i")));
 							
 							// it is a linked view
 							if($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_key] > 0)
 							{								
 								// check if link exists in database already
-								$checkViewDestinationQuery = $this->mc->database->query("SELECT COUNT(*) as count FROM " . $this->mc->config['database_pref'] . "view_links WHERE view_id_parent = ? AND view_id_destination = ?", array(array($this->viewId, "i"), array($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_key], "i")));
+								$checkViewDestinationQuery = $this->mc->database->query("SELECT COUNT(*) as count FROM " . $this->mc->config['database_pref'] . "view_links AS A WHERE view_id_parent = ? AND view_id_destination = ?", array(array($this->viewId, "i"), array($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_key], "i")), array(array("view_links", "view_id_parent", "view_id_destination")));
 								if($checkViewDestinationQuery->rows[0]->count == 0)
 								{
 									// insert new link
-									$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "view_links (view_id_parent, view_id_destination) VALUES(?, ?)", array(array($this->viewId, "i"), array($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_key], "i")));
+									$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "view_links (view_id_parent, view_id_destination, revision) VALUES(?, ?, ?)", array(array($this->viewId, "i"), array($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_key], "i"), array($this->mc->config['current_revision'], "i")));
 								}
 							}
 						}
 					}
 				}
-				$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_zoommap_images (view_id, view_type, image, width, height) VALUES(?,?,?,0,0)", array(array($this->viewId, "i"), array($currentViewType->device_id, "i"), array($_REQUEST['picture_name_' . $currentViewType->device_key])));
+				$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_zoommap_images (view_id, view_type, image, width, height, revision) VALUES(?,?,?,0,0,?)", array(array($this->viewId, "i"), array($currentViewType->device_id, "i"), array($_REQUEST['picture_name_' . $currentViewType->device_key]), array($this->mc->config['current_revision'], "i")));
 			}
 		}		
 		
 		// update concept type id for this view
-		$conceptQuery = $this->mc->database->query("SELECT concept_id FROM " . $this->mc->config['database_pref'] . "concepts WHERE concept_key = 'zoomimage'", array());
-		$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "views SET view_c_type = ? WHERE view_id = ?", array(array($conceptQuery->rows[0]->concept_id, "i"), array($this->viewId, "i")));
+		$conceptQuery = $this->mc->database->query("SELECT concept_id FROM " . $this->mc->config['database_pref'] . "concepts WHERE concept_key = 'zoomimage'");
+		$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "views SET view_c_type = ? WHERE view_id = ?", array(array($conceptQuery->rows[0]->concept_id, "i"), array($this->viewId, "i")), array(array("views", "view_id")));
 		
 		$this->cleanUpDirectory();
 		$this->createXmlFile();
@@ -145,7 +137,7 @@ class apdModuleZoomimage extends apdModuleBasicModule
 	{
 		$imageFileName = "";
 	
-		$imageQuery = $this->mc->database->query("SELECT A.image, B.view_name, A.view_type, C.device_suffix FROM " . $this->mc->config['database_pref'] . "concept_zoommap_images AS A, " . $this->mc->config['database_pref'] . "views AS B, " . $this->mc->config['database_pref'] . "devices AS C WHERE A.view_id = ? AND A.view_id = B.view_id AND A.view_type = C.device_id", array(array($this->viewId, "i")));
+		$imageQuery = $this->mc->database->query("SELECT A.image, B.view_name, A.view_type, C.device_suffix FROM " . $this->mc->config['database_pref'] . "concept_zoommap_images AS A, " . $this->mc->config['database_pref'] . "views AS B, " . $this->mc->config['database_pref'] . "devices AS C WHERE A.view_id = ? AND A.view_id = B.view_id AND A.view_type = C.device_id", array(array($this->viewId, "i")), array(array("concept_zoommap_images", "view_id"), array("views", "view_id")));
 		foreach($imageQuery->rows as $currentImageFile)
 		{
 			$imageFileName = $currentImageFile->image;
@@ -241,7 +233,7 @@ class apdModuleZoomimage extends apdModuleBasicModule
 		*/		
 			
 		$imageFileName = "";
-		$imageQuery = $this->mc->database->query("SELECT A.image, B.view_name, A.view_type, C.device_suffix, C.device_key FROM " . $this->mc->config['database_pref'] . "concept_zoommap_images AS A, " . $this->mc->config['database_pref'] . "views AS B, " . $this->mc->config['database_pref'] . "devices AS C WHERE A.view_id = ? AND A.view_id = B.view_id AND A.view_type = C.device_id", array(array($this->viewId, "i")));
+		$imageQuery = $this->mc->database->query("SELECT A.image, B.view_name, A.view_type, C.device_suffix, C.device_key FROM " . $this->mc->config['database_pref'] . "concept_zoommap_images AS A, " . $this->mc->config['database_pref'] . "views AS B, " . $this->mc->config['database_pref'] . "devices AS C WHERE A.view_id = ? AND A.view_id = B.view_id AND A.view_type = C.device_id", array(array($this->viewId, "i")), array(array("concept_zoommap_images", "view_id"), array("views", "view_id")));
 		foreach($imageQuery->rows as $currentImageFile)
 		{
 			$output = '<?xml version="1.0" encoding="UTF-8"?><xml>';
@@ -272,7 +264,7 @@ class apdModuleZoomimage extends apdModuleBasicModule
 							
 							$output .= '<imagetile src="' . $currentImageFile->view_name . '_tile_' . $vertiTile . '_' . $horizTile .'.png" posx="' . ($horizTile * $this->imageTileSize) . '" posy="' . ($vertiTile * $this->imageTileSize) . '" width="' . $tileWidth . '" height="' . $tileHeight . '">';
 							
-							$buttonActionQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_zoommap_actions WHERE view_id = ? AND view_type = ?", array(array($this->viewId, "i"), array($currentImageFile->view_type, "i")));
+							$buttonActionQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_zoommap_actions AS A WHERE view_id = ? AND view_type = ?", array(array($this->viewId, "i"), array($currentImageFile->view_type, "i")), array(array("concept_zoommap_actions", "view_id", "view_type")));
 							foreach($buttonActionQuery->rows as $currentButtonAction)
 							{
 								// check if buttonaction is suitable for this current tile
@@ -338,7 +330,7 @@ class apdModuleZoomimage extends apdModuleBasicModule
 								{
 									if(is_numeric($currentButtonAction->action_command))
 									{
-										$actionViewQuery = $this->mc->database->query("SELECT view_name FROM " . $this->mc->config['database_pref'] . "views WHERE view_id = ?", array(array($currentButtonAction->action_command, "i")));
+										$actionViewQuery = $this->mc->database->query("SELECT view_name FROM " . $this->mc->config['database_pref'] . "views AS A WHERE view_id = ?", array(array($currentButtonAction->action_command, "i")), array(array("views", "view_id")));
 										if(count($actionViewQuery->rows) > 0)
 											$buttonOutput .= ' command="loadPage::' . $actionViewQuery->rows[0]->view_name . "&amp;YES\" />\n";
 									}

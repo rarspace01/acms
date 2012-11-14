@@ -17,12 +17,15 @@ class apdLogger
 {	
 	function log($text, $sql_param = null)
 	{
-		echo $text . "<br>";
+		$output = $text . "\n";
 		if($sql_param != null) {
-			echo "<pre>";
-			print_r($sql_param);
-			echo "</pre><br>";
+			$output .= print_r($sql_param, true) . "\n--------\n";
 		}
+		echo $output;
+		
+		$logFile = fopen('config/logfile.log', 'a+');
+		fwrite($logFile, $output);
+		fclose($logFile);
 	}
 }
 

@@ -83,7 +83,7 @@ class apdViewText extends apdViewBasicModule
 		=============
 		*/		
 		// load all languages from database, these are the columns in the language-table
-		$languageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "localisations WHERE local_active = 1", array());		
+		$languageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "localisations WHERE local_active = 1");		
 		// get snippet to display different textfields for all languages
 		preg_match_all('#\{FOR_LANGUAGES(.*?)FOR_LANGUAGES\}#si', $this->template, $forLanguages);
 		$forLanguages[0] = "";
@@ -100,7 +100,7 @@ class apdViewText extends apdViewBasicModule
 			if($this->viewId >= 0)
 			{
 				// load content from database
-				$textContentQuery = $this->mc->database->query("SELECT content FROM " . $this->mc->config['database_pref'] . "concept_text WHERE view_id = ? AND language = ?", array(array($this->viewId, "i"), array($availableLanguage->local_id, "s")));
+				$textContentQuery = $this->mc->database->query("SELECT content FROM " . $this->mc->config['database_pref'] . "concept_text AS A WHERE view_id = ? AND language = ?", array(array($this->viewId, "i"), array($availableLanguage->local_id, "s")), array(array("concept_text", "view_id", "language")));
 				$currentLanguageTpl = preg_replace('#\{TEXTCONTENT\}#si', $textContentQuery->rows[0]->content, $currentLanguageTpl);
 			}
 			else

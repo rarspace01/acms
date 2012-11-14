@@ -54,12 +54,9 @@ class apdModulePresentation extends apdModuleBasicModule
 		
 		$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "views SET view_action = view_name WHERE view_id = ?", array(array($this->viewId, "i")));
 	
-		// preemptive cleanup
-		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "concept_presentation WHERE view_id = ?", array(array($this->viewId, "i")));
-	
 		if(isset($_REQUEST['view_pdfselection']) && $_REQUEST['view_pdfselection'] != -1)
 		{
-			$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_presentation (view_id, image_position, image_path) VALUES(?, 0, ?)", array(array($this->viewId, "i"), array($_REQUEST['view_pdfselection'])));
+			$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_presentation (view_id, image_position, image_path, revision) VALUES(?, 0, ?, ?)", array(array($this->viewId, "i"), array($_REQUEST['view_pdfselection']), array($this->mc->config['current_revision'], "i")));
 		}
 		else
 		{
@@ -101,7 +98,7 @@ class apdModulePresentation extends apdModuleBasicModule
 		*/
 		$output = '<?xml version="1.0" encoding="UTF-8"?><xml>';
 	
-		$imagesQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_presentation WHERE view_id = ? ORDER BY image_position ASC", array(array($this->viewId, "i")));
+		$imagesQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_presentation AS A WHERE view_id = ? ORDER BY image_position ASC", array(array($this->viewId, "i")), array(array("concept_presentation", "view_id", "image_position")));
 		foreach($imagesQuery->rows as $currentImage)
 		{
 			$output .= '<galleryimage src="' . $currentImage->image_path . '" id="' . $currentImage->image_position . '" />';

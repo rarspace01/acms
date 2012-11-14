@@ -57,15 +57,10 @@ class apdModuleText extends apdModuleBasicModule
 		insert mode
 		===========
 		*/
-		if($originalViewId < 0)
+		// go through list of languages
+		$availableLanguageQuery = $this->mc->database->query("SELECT local_id FROM " . $this->mc->config['database_pref'] . "localisations WHERE local_active = 1");
+		foreach($availableLanguageQuery->rows as $availableLanguage)
 		{
-			// go through list of languages
-			$availableLanguageQuery = $this->mc->database->query("SELECT local_id FROM " . $this->mc->config['database_pref'] . "localisations", array());
-			foreach($availableLanguageQuery->rows as $availableLanguage)
-			{
-				// for every language, create an entry in _concept_text for the html-text
-				$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_text (view_id, language) VALUES(?, ?)", array(array($this->viewId, "i"), array($availableLanguage->local_id, "i")));
-			}
 		}
 		
 		
@@ -78,10 +73,6 @@ class apdModuleText extends apdModuleBasicModule
 		// set the action-file (content) to the name of the view (=name of the HTML file)
 		$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "views SET view_action = view_name WHERE view_id = ?", array(array($this->viewId, "i")));
 		
-		// first delete all existing links to simplify matters
-		// later we check for links to other views (if the command loadPage::XXXX is called)
-		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "view_links WHERE view_id_parent = ?", array(array($this->viewId, "i")));
-		
 		ob_clean();
 		include('templates/' . $this->mc->config['template'] . '/modules/text/output_io.html');
 		$textOutputTemplateIphone = ob_get_contents();
@@ -91,7 +82,7 @@ class apdModuleText extends apdModuleBasicModule
 		ob_clean();
 		
 		// go through list of languages
-		$availableLanguageQuery = $this->mc->database->query("SELECT local_id, local_key FROM " . $this->mc->config['database_pref'] . "localisations", array());
+		$availableLanguageQuery = $this->mc->database->query("SELECT local_id, local_key FROM " . $this->mc->config['database_pref'] . "localisations WHERE local_active = 1");
 		foreach($availableLanguageQuery->rows as $availableLanguage)
 		{
 			$currentContent = $_REQUEST['content_' . $availableLanguage->local_id];
@@ -112,9 +103,9 @@ class apdModuleText extends apdModuleBasicModule
 			$outputFileHandle = fopen($this->mc->config['upload_dir'] . '/root/' . $availableLanguage->local_key . '.lproj/' . $this->viewDetails->view_name . '_ia.html', 'wb');
 			fwrite($outputFileHandle, $currentLanguageOutput);
 			fclose($outputFileHandle);
-		
+			
 			// for every language, create an entry in _concept_text for the html-text
-			$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "concept_text SET content = ? WHERE view_id = ? AND language = ?", array(array($currentContent), array($this->viewId, "i"), array($availableLanguage->local_id, "i")));
+			$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_text (view_id, language, content, revision) VALUES(?, ?, ?, ?)", array(array($this->viewId, "i"), array($availableLanguage->local_id, "i"), array($currentContent), array($this->mc->config['current_revision'], "i")));
 			
 			// now search for a regular expression with loadPage::XXXX
 			preg_match_all('#(?:(?:<a)|(?:<script))(?:.+?)loadPage::(.+?)["\'&> ;\r\n](?:.*?)(?:(?:</a>)|(?:</script>))#si', $_REQUEST['content_' . $availableLanguage->local_id], $allOutgoingLinks, PREG_SET_ORDER);
@@ -126,18 +117,18 @@ class apdModuleText extends apdModuleBasicModule
 				$destinationViewIdQuery = $this->mc->database->query("SELECT view_id FROM " . $this->mc->config['database_pref'] . "views WHERE view_name = ?", array(array($destinationViewName)));
 				
 				// check if link exists in database already
-				$checkViewDestinationQuery = $this->mc->database->query("SELECT COUNT(*) as count FROM " . $this->mc->config['database_pref'] . "view_links WHERE view_id_parent = ? AND view_id_destination = ?", array(array($this->viewId, "i"), array($destinationViewIdQuery->rows[0]->view_id, "i")));
+				$checkViewDestinationQuery = $this->mc->database->query("SELECT COUNT(*) as count FROM " . $this->mc->config['database_pref'] . "view_links AS A WHERE view_id_parent = ? AND view_id_destination = ?", array(array($this->viewId, "i"), array($destinationViewIdQuery->rows[0]->view_id, "i")), array(array("view_links", "view_id_parent", "view_id_destination")));
 				if($checkViewDestinationQuery->rows[0]->count == 0)
 				{
 					// insert new link
-					$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "view_links (view_id_parent, view_id_destination) VALUES(?, ?)", array(array($this->viewId, "i"), array($destinationViewIdQuery->rows[0]->view_id, "i")));
+					$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "view_links (view_id_parent, view_id_destination, revision) VALUES(?, ?, ?)", array(array($this->viewId, "i"), array($destinationViewIdQuery->rows[0]->view_id, "i"), array($this->mc->config['current_revision'], "i")));
 				}
 			}
 		}
 		
 		// update concept type id for this view
-		$conceptQuery = $this->mc->database->query("SELECT concept_id FROM " . $this->mc->config['database_pref'] . "concepts WHERE concept_key = 'text'", array());
-		$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "views SET view_c_type = ? WHERE view_id = ?", array(array($conceptQuery->rows[0]->concept_id, "i"), array($this->viewId, "i")));
+		$conceptQuery = $this->mc->database->query("SELECT concept_id FROM " . $this->mc->config['database_pref'] . "concepts WHERE concept_key = 'text'");
+		$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "views AS A SET view_c_type = ? WHERE view_id = ?", array(array($conceptQuery->rows[0]->concept_id, "i"), array($this->viewId, "i")), array(array("views", "view_id")));
 		
 		// re-create main xml file and refresh filelist
 		$this->mc->filecreator->createGeneralFiles();

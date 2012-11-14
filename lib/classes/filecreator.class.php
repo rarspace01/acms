@@ -62,12 +62,12 @@ class apdFileCreator
 		===============
 		*/
 		// NOTE: we will only consider the "active" tabbars here
-		$tabbarQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "tabbars WHERE tabbar_active = 1 ORDER BY tabbar_id", array());
+		$tabbarQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "tabbars AS A WHERE tabbar_active = 1 ORDER BY tabbar_id", array(), array(array("tabbars", "tabbar_id")));
 		$tabbarOutput = '<tabbars>';
 		foreach($tabbarQuery->rows as $currentTabbar)
 		{
 			$tabbarOutput .= '<tabbar tabid="' . $currentTabbar->tabbar_id . '">';
-			$tabbarTabQuery = $this->mc->database->query("SELECT A.tab_default, B.view_name, A.tab_icon FROM " . $this->mc->config['database_pref'] . "tabs AS A, " . $this->mc->config['database_pref'] . "views AS B WHERE A.tabbar_id = ? AND A.tab_view = B.view_id ORDER BY tab_position ASC", array(array($currentTabbar->tabbar_id, "i")));
+			$tabbarTabQuery = $this->mc->database->query("SELECT A.tab_default, B.view_name, A.tab_icon FROM " . $this->mc->config['database_pref'] . "tabs AS A, " . $this->mc->config['database_pref'] . "views AS B WHERE A.tabbar_id = ? AND A.tab_view = B.view_id ORDER BY tab_position ASC", array(array($currentTabbar->tabbar_id, "i")), array(array("tabs", "tabbar_id", "tab_id"), array("views", "view_id")));
 			// iterate here, because we need the index as position
 			// (do not rely that tab_position is coherent)
 			for($i = 0; $i < count($tabbarTabQuery->rows); $i++)
@@ -87,7 +87,7 @@ class apdFileCreator
 		===============
 		*/
 		$output .= '<pages>';
-		$viewQuery = $this->mc->database->query("SELECT A.*, B.concept_view FROM " . $this->mc->config['database_pref'] . "views AS A, " . $this->mc->config['database_pref'] . "concepts AS B WHERE A.view_c_type = B.concept_id", array());
+		$viewQuery = $this->mc->database->query("SELECT A.*, B.concept_view FROM " . $this->mc->config['database_pref'] . "views AS A, " . $this->mc->config['database_pref'] . "concepts AS B WHERE A.view_c_type = B.concept_id", array(), array(array("views", "view_id")));
 		foreach($viewQuery->rows as $currentView)
 		{
 			// general page information
@@ -131,7 +131,7 @@ class apdFileCreator
 		foreach($localisationQuery->rows as $currentLocale)
 		{
 			$currentLocaleOutput = "";
-			$localStringsQuery = $this->mc->database->query("SELECT local_key, local_value FROM " . $this->mc->config['database_pref'] . "localisation_keys WHERE local_id = ?", array(array($currentLocale->local_id, "i")));
+			$localStringsQuery = $this->mc->database->query("SELECT local_key, local_value FROM " . $this->mc->config['database_pref'] . "localisation_keys AS A WHERE local_id = ?", array(array($currentLocale->local_id, "i")), array(array("localisation_keys", "local_id", "local_key")));
 			foreach($localStringsQuery->rows as $currentLocalString)
 			{
 				$currentLocaleOutput .= '"' . $currentLocalString->local_key . '" = "' . $currentLocalString->local_value . '";' . "\n";

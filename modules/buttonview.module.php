@@ -61,18 +61,9 @@ class apdModuleButtonview extends apdModuleBasicModule
 		
 		// set the action-file (content) to the name of the view (=name of the HTML file)
 		$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "views SET view_action = view_name WHERE view_id = ?", array(array($this->viewId, "i")));
-		
-		// first delete all existing links to simplify matters
-		// later we check for links to other views (if the command loadPage::XXXX is called)
-		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "view_links WHERE view_id_parent = ?", array(array($this->viewId, "i")));
-		
-		// delete all content for this view
-		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "concept_buttonview_images WHERE view_id = ?", array(array($this->viewId, "i")));
-		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "concept_buttonview_actions WHERE view_id = ?", array(array($this->viewId, "i")));
-		$this->mc->database->query("DELETE FROM " . $this->mc->config['database_pref'] . "localisation_keys WHERE local_key LIKE ?", array(array('buttonview_button_view_' . $this->viewId . '_%')));
 				
 		// go through list of languages
-		$availableLanguageQuery = $this->mc->database->query("SELECT local_id FROM " . $this->mc->config['database_pref'] . "localisations", array());
+		$availableLanguageQuery = $this->mc->database->query("SELECT local_id FROM " . $this->mc->config['database_pref'] . "localisations WHERE local_active = 1");
 				
 		// go through list of sections
 		$viewTypesQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "devices", array());
@@ -94,12 +85,12 @@ class apdModuleButtonview extends apdModuleBasicModule
 							
 							// update localisation-value for button-titles
 							foreach($availableLanguageQuery->rows as $availableLanguage)
-								$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "localisation_keys (local_id, local_key, local_value) VALUES(?,?,?)", array(array($availableLanguage->local_id, "i"), array($buttonLanguageKey), array($_REQUEST['buttonview_view_' . $i . '_' . $currentViewType->device_key . '_' . $availableLanguage->local_id])));
+								$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "localisation_keys (local_id, local_key, local_value, revision) VALUES(?,?,?,?)", array(array($availableLanguage->local_id, "i"), array($buttonLanguageKey), array($_REQUEST['buttonview_view_' . $i . '_' . $currentViewType->device_key . '_' . $availableLanguage->local_id]), array($this->mc->config['current_revision'], "i")));
 							
 							$actionCommandValue = ($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_key] > 0) ? $_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_key] : $_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_key . '_custom'];
 							
 							// insert into concept_buttonview_actions
-							$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_buttonview_actions (view_id, view_type, action_title, action_posx, action_posy, action_width, action_height, action_command) VALUES(?,?,?,?,?,?,?,?)", array(array($this->viewId, "i"), array($currentViewType->device_id, "i"), array($buttonLanguageKey), array($_REQUEST['button_left_' . $i . '_' . $currentViewType->device_key], "i"), array($_REQUEST['button_top_' . $i . '_' . $currentViewType->device_key], "i"), array($_REQUEST['button_width_' . $i . '_' . $currentViewType->device_key], "i"), array($_REQUEST['button_height_' . $i . '_' . $currentViewType->device_key], "i"), array($actionCommandValue, "s")));
+							$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_buttonview_actions (view_id, view_type, action_title, action_posx, action_posy, action_width, action_height, action_command, revision) VALUES(?,?,?,?,?,?,?,?,?)", array(array($this->viewId, "i"), array($currentViewType->device_id, "i"), array($buttonLanguageKey), array($_REQUEST['button_left_' . $i . '_' . $currentViewType->device_key], "i"), array($_REQUEST['button_top_' . $i . '_' . $currentViewType->device_key], "i"), array($_REQUEST['button_width_' . $i . '_' . $currentViewType->device_key], "i"), array($_REQUEST['button_height_' . $i . '_' . $currentViewType->device_key], "i"), array($actionCommandValue, "s"), array($this->mc->config['current_revision'], "i")));
 							
 							// it is a linked view
 							if($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_key] > 0)
@@ -109,19 +100,19 @@ class apdModuleButtonview extends apdModuleBasicModule
 								if($checkViewDestinationQuery->rows[0]->count == 0)
 								{
 									// insert new link
-									$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "view_links (view_id_parent, view_id_destination) VALUES(?, ?)", array(array($this->viewId, "i"), array($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_key], "i")));
+									$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "view_links (view_id_parent, view_id_destination, revision) VALUES(?, ?, ?)", array(array($this->viewId, "i"), array($_REQUEST['loadaction_view_' . $i . '_' . $currentViewType->device_key], "i"), array($this->mc->config['current_revision'], "i")));
 								}
 							}
 						}
 					}
 				}
-				$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_buttonview_images (view_id, view_type, image, width, height) VALUES(?,?,?,0,0)", array(array($this->viewId, "i"), array($currentViewType->device_id, "i"), array($_REQUEST['picture_name_' . $currentViewType->device_key])));
+				$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_buttonview_images (view_id, view_type, image, width, height, revision) VALUES(?,?,?,0,0,?)", array(array($this->viewId, "i"), array($currentViewType->device_id, "i"), array($_REQUEST['picture_name_' . $currentViewType->device_key]), array($this->mc->config['current_revision'], "i")));
 			}
 		}		
 		
 		// update concept type id for this view
 		$conceptQuery = $this->mc->database->query("SELECT concept_id FROM " . $this->mc->config['database_pref'] . "concepts WHERE concept_key = 'buttonview'", array());
-		$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "views SET view_c_type = ?, view_background = ? WHERE view_id = ?", array(array($conceptQuery->rows[0]->concept_id, "i"), array($this->viewDetails->view_name . '.png'), array($this->viewId, "i")));
+		$this->mc->database->query("UPDATE " . $this->mc->config['database_pref'] . "views SET view_c_type = ?, view_background = ? WHERE view_id = ?", array(array($conceptQuery->rows[0]->concept_id, "i"), array($this->viewDetails->view_name . '.png'), array($this->viewId, "i")), array(array("views", "view_id")));
 		
 		$this->cleanUpDirectory();
 		$this->createBackgroundImages();
@@ -151,7 +142,7 @@ class apdModuleButtonview extends apdModuleBasicModule
 	{
 		$imageFileName = "";
 	
-		$imageQuery = $this->mc->database->query("SELECT A.image, B.view_name, A.view_type, C.device_suffix, C.device_key FROM " . $this->mc->config['database_pref'] . "concept_buttonview_images AS A, " . $this->mc->config['database_pref'] . "views AS B, " . $this->mc->config['database_pref'] . "devices AS C WHERE A.view_id = ? AND A.view_id = B.view_id AND A.view_type = C.device_id", array(array($this->viewId, "i")));
+		$imageQuery = $this->mc->database->query("SELECT A.image, B.view_name, A.view_type, C.device_suffix, C.device_key FROM " . $this->mc->config['database_pref'] . "concept_buttonview_images AS A, " . $this->mc->config['database_pref'] . "views AS B, " . $this->mc->config['database_pref'] . "devices AS C WHERE A.view_id = ? AND A.view_id = B.view_id AND A.view_type = C.device_id", array(array($this->viewId, "i")), array(array("concept_buttonview_images", "view_id", "view_type"), array("views", "view_id")));
 		foreach($imageQuery->rows as $currentImageFile)
 		{
 			$imageFileName = $currentImageFile->image;
@@ -242,7 +233,7 @@ class apdModuleButtonview extends apdModuleBasicModule
 		foreach($deviceTypeQuery->rows as $currentDeviceType)
 		{
 			$output = '<?xml version="1.0" encoding="UTF-8"?><xml>';
-			$buttonActionQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_buttonview_actions WHERE view_id = ? AND view_type = ?", array(array($this->viewId, "i"), array($currentDeviceType->device_id, "i")));
+			$buttonActionQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_buttonview_actions AS A WHERE view_id = ? AND view_type = ?", array(array($this->viewId, "i"), array($currentDeviceType->device_id, "i")), array(array("concept_buttonview_actions", "view_id", "view_type", "action_posx", "action_posy", "action_width", "action_height")));
 			foreach($buttonActionQuery->rows as $currentButtonAction)
 			{
 				// check if buttonaction is suitable for this current tile
@@ -270,7 +261,7 @@ class apdModuleButtonview extends apdModuleBasicModule
 			
 			if(count($buttonActionQuery->rows) > 0)
 			{
-				$imageQuery = $this->mc->database->query("SELECT image FROM " . $this->mc->config['database_pref'] . "concept_buttonview_images  WHERE view_id = ?", array(array($this->viewId, "i")));
+				$imageQuery = $this->mc->database->query("SELECT image FROM " . $this->mc->config['database_pref'] . "concept_buttonview_images AS A WHERE view_id = ?", array(array($this->viewId, "i")), array(array("concept_buttonview_images", "view_id", "view_type")));
 				$outputFileSuffix = (count($imageQuery->rows) == 1 ? '' : ($currentDeviceType->device_suffix));
 				$outputFileHandle = fopen($this->mc->config['upload_dir'] . '/root/xml/'. $this->viewDetails->view_name . $outputFileSuffix . '.xml', 'wb');
 				fwrite($outputFileHandle, $output);

@@ -50,13 +50,13 @@ class apdViewTabBar implements apdIView
 		// load tabbar details and tabs
 		if($this->tabBarId >= 0)
 		{
-			$tabBarDetailQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "tabbars WHERE tabbar_id = ?", array(array($this->tabBarId, "i")));
+			$tabBarDetailQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "tabbars AS A WHERE tabbar_id = ?", array(array($this->tabBarId, "i")), array(array("tabbars", "tabbar_id")));
 			if(count($tabBarDetailQuery->rows) > 0)
 			{
 				$this->tabBarDetails = $tabBarDetailQuery->rows[0];
 				
 				$this->tabs = array();				
-				$tabBarTabsQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "tabs WHERE tabbar_id = ? ORDER BY tab_position ASC", array(array($this->tabBarId, "i")));
+				$tabBarTabsQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "tabs AS A WHERE tabbar_id = ? ORDER BY tab_position ASC", array(array($this->tabBarId, "i")), array(array("tabs", "tabbar_id", "tab_id")));
 				foreach($tabBarTabsQuery->rows as $currentTab)
 				{
 					$this->tabs[] = $currentTab;
@@ -236,7 +236,7 @@ class apdViewTabBar implements apdIView
 			$this->viewList = array();
 			
 			// query all views
-			$viewListQuery = $this->mc->database->query("SELECT view_id, view_name FROM " . $this->mc->config['database_pref'] . "views ORDER BY view_id", array());
+			$viewListQuery = $this->mc->database->query("SELECT view_id, view_name FROM " . $this->mc->config['database_pref'] . "views AS A ORDER BY view_id", array(), array(array("views", "view_id")));
 			
 			foreach($viewListQuery->rows as $currentView)
 			{

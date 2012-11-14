@@ -46,11 +46,65 @@ class apdDatabase
 		$this->sqlready = true;
 	}
 	
-	function query($sqlQuery, $parameters=array())
+	function query($sqlQuery, $parameters=array(), $revisionQuery=false)
 	{
 		$result = new stdClass();
 		
 		if($this->sqlready) {
+		
+			// first check if revision-modifier needs to be inserted
+			if($revisionQuery != false && is_array($revisionQuery) && count($revisionQuery) > 0)
+			{
+				$wherePosition = strpos($sqlQuery, 'WHERE ');
+				$addingWhere = "";
+				$letters = array("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P");
+
+				// in an update query we can't append the check for revisions inside the query
+				// because MySQL doesn't support "nested queries" within UPDATE
+				// so extract all important information here
+				if(strpos($sqlQuery, 'UPDATE ') === 0) {
+					if($wherePosition != false && $wherePosition > 1) {
+						// get part of the WHERE clause
+						$whereClause = substr($sqlQuery, $wherePosition+6);
+						
+						$tempArray = array();
+						// count how many parameters ? are before the first WHERE
+						$numberOfParams = preg_match_all('#\?#si', substr($sqlQuery, 0, $wherePosition+6), $tempArray);						
+						$currentMaxRevisionQuery = $this->query("SELECT MAX(revision) AS current_revision FROM " . $this->mc->config['database_pref'] . $revisionQuery[0][0] . " WHERE " . $whereClause, array_slice($parameters, $numberOfParams));
+						if(count($currentMaxRevisionQuery->rows) > 0)
+						{
+							$addingWhere .= "revision = '" . $currentMaxRevisionQuery->rows[0]->current_revision . "' AND ";
+						}
+					}
+				}
+				// otherwise we have a SELECT query, here we can handle it normally
+				else if(strpos($sqlQuery, 'SELECT ') === 0 || strpos($sqlQuery, 'INSERT INTO ') === 0) {
+				
+					/*
+					SELECT tabbar_id, tabbar_name, tabbar_active FROM sd_tabbars AS A
+						WHERE revision = (	SELECT MAX( revision ) FROM sd_tabbars WHERE tabbar_id = A.tabbar_id AND revision <= ( SELECT revision_active FROM sd_revisions ) )
+						ORDER BY tabbar_name ASC 
+					*/
+				
+					// first insert all tables
+					for($i = 0; $i < count($revisionQuery); $i++)
+					{					
+						$addingWhere .= $letters[$i] . ".revision = ( SELECT MAX(revision) AS current_revision FROM " . $this->mc->config['database_pref'] . $revisionQuery[$i][0] . " WHERE ";
+						for($j = 1; $j < count($revisionQuery[$i]); $j++)
+						{
+							$addingWhere .= $letters[$i] . "." . $revisionQuery[$i][$j] . " = " . $revisionQuery[$i][$j] . " AND ";
+						}
+						$addingWhere .= " revision <= ( SELECT revision_active FROM " . $this->mc->config['database_pref'] . "revisions ) ) AND ";
+					}
+				}
+				
+				// check if we should append the where-clause for revision
+				if($addingWhere != "" && $wherePosition != false)
+				{
+					$sqlQuery = substr($sqlQuery, 0, $wherePosition+6) . $addingWhere . substr($sqlQuery, $wherePosition+6);
+				}
+			}
+		
 			// create a new statement and prepare the sql-query
 			if($sqlStatement = $this->connection->prepare($sqlQuery)) {
 				// now bind parameters

@@ -241,6 +241,37 @@ class apdModuleFilemanager
 					}
 				}
 			}
+			if(isset($_REQUEST['filetype']) && $_REQUEST['filetype'] == 'localisation')
+			{
+				// check if there is a real localisation
+				if(isset($_REQUEST['set_localisation']) && $_REQUEST['set_localisation'] != "generic")
+				{
+					$checkLocalisationActive = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "localisations WHERE local_key = ? AND local_active = 1", array(array($_REQUEST['set_localisation'])));
+					if(count($checkLocalisationActive->rows) > 0)
+					{
+						$filePathOrg = $this->mc->config['upload_dir'] . 'root/' . $_REQUEST['path'];
+						// check if directory is not a localised one, yet
+						if(file_exists($filePathOrg) && is_dir($filePathOrg) && !preg_match('#^(.*?).lproj$#si', $filePathOrg))
+						{
+							$filePathNew = $filePathOrg . '/' . $_REQUEST['set_localisation'] . '.lproj/';
+							// check if localisation directory exists
+							if(!file_exists($filePathNew))
+							{
+								mkdir($filePathNew, 0777, true);
+							}
+							$fileName = $_REQUEST['filename']; // name of the meta-file, the file that is not "specialised" yet
+							$fileExtension = array_pop(explode('.', $fileName)); // name of the meta-file, the file that is not "specialised" yet
+							if(file_exists($filePathNew) && is_dir($filePathNew))
+							{
+								if(file_exists($filePathOrg . '/' . $fileName))
+								{
+									rename($filePathOrg . '/' . $fileName, $filePathNew . '/' . $fileName);
+								}
+							}
+						}
+					}
+				}
+			}
 			header("Location: index.php?m=filemanager&path=" . $_REQUEST['path']);
 		}
 		/*
@@ -270,6 +301,7 @@ class apdModuleFilemanager
 				else
 					$this->deliverFile($_REQUEST['mfid']);
 			}
+			exit();
 		}
 		else if($_REQUEST['type'] == 'filelist')
 		{
@@ -307,18 +339,25 @@ class apdModuleFilemanager
 		{
 			$fileName = $fileQuery->rows[0]->path . $fileQuery->rows[0]->filename;
 			
-			header('Content-Description: File Transfer');
-			header('Content-Type: application/octet-stream');
-			header('Content-Disposition: attachment; filename='.basename($fileQuery->rows[0]->mfilename));
-			header('Content-Transfer-Encoding: binary');
-			header('Expires: 0');
-			header('Cache-Control: must-revalidate');
-			header('Pragma: public');
-			header('Content-Length: ' . filesize($fileName));
-			set_time_limit(0);
-			ob_clean();
-			flush();
-			readfile($fileName);
+			if(file_exists($fileName))
+			{
+				header('Content-Description: File Transfer');
+				header('Content-Type: application/octet-stream');
+				header('Content-Disposition: attachment; filename='.basename($fileQuery->rows[0]->mfilename));
+				header('Content-Transfer-Encoding: binary');
+				header('Expires: 0');
+				header('Cache-Control: must-revalidate');
+				header('Pragma: public');
+				header('Content-Length: ' . filesize($fileName));
+				set_time_limit(0);
+				ob_clean();
+				flush();
+				readfile($fileName);
+			}
+			else
+			{
+				header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
+			}
 			exit();
 		}
 		else
