@@ -107,7 +107,7 @@ class apdModuleTabBar
 		
 		
 			// create entry in _tabbars
-			$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "tabbars (tabbar_id, tabbar_name, revision) VALUES(?, ?, ?)", array(array($maximumTabBarId, "i"), array($_REQUEST['tabbar_name']), array($this->mc->config['current_revision'], "i")));
+			$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "tabbars (tabbar_id, tabbar_name, revision) VALUES(?, ?, ?)", array(array($this->tabBarId, "i"), array($_REQUEST['tabbar_name']), array($this->mc->config['current_revision'], "i")));
 			
 			// now insert new tabs from POST form
 			$dataIdCount = 1; // will hold the current tab-id for database
@@ -180,7 +180,7 @@ class apdModuleTabBar
 		$fileManagerObj = new apdModuleFilemanager($this->mc);
 		$fileManagerObj->refreshFilelist();
 		
-		//header("Location: index.php?m=tabbar&view_id=" . $this->tabBarId);
+		header("Location: index.php?m=tabbar&view_id=" . $this->tabBarId);
 	}
 	
 	/**

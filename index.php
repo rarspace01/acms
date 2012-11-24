@@ -7,7 +7,7 @@ AppPH Design (c) 2012 SHIN Solutions
 Index class
 */
 
-//error_reporting(E_ALL);
+error_reporting(E_ALL);
 
 /*
 ========
@@ -92,6 +92,53 @@ if(isset($_REQUEST['m']) && file_exists('lib/views/' . basename($_REQUEST['m']) 
 	$currentModule = basename($_REQUEST['m']);
 }
 
+$mainContainer->config['user_rank'] = -1;
+if(isset($_COOKIE[$config['user_cookie'] . 'userid']) && trim($_COOKIE[$config['user_cookie'] . 'userid']) != '')
+{
+	$selectUserRank = $mainContainer->database->query("SELECT `group_id`, `user_passkey` FROM `" . $config['database_pref'] . "users` WHERE `user_id` = ?", array(array($_COOKIE[$config['user_cookie'] . 'userid'])));
+	if(count($selectUserRank->rows) > 0) // check if user is existing anyway
+	{
+		// if password in database is equal to password in cookie, set user-rank
+		if($_COOKIE[$config['user_cookie'] . 'passkey'] === $selectUserRank->rows[0]->user_passkey)
+		{
+			// save rank from database in config-array
+			$mainContainer->config['user_rank'] = $selectUserRank->rows[0]->group_id;
+		}
+	}
+}
+else if(isset($_REQUEST['submit']) && $_REQUEST['submit'] == 'login')
+{
+	$getPasswordFromDB = $mainContainer->database->query("SELECT `user_id`, `group_id`, `user_passkey` FROM `" . $config['database_pref'] . "users` WHERE `user_name` = ?", array(array($_REQUEST['loginname'])));
+	// if password is equal with sha1-hash from DB, set cookie
+	if(sha1($config['user_pw_salt'] . sha1($_REQUEST['loginpassword'])) == $getPasswordFromDB->rows[0]->user_passkey)
+	{ // cookie is valid for 1 year
+		setcookie($config['user_cookie'] . 'userid', $getPasswordFromDB->rows[0]->user_id, (time() + 60*60*24*365)); // username
+		setcookie($config['user_cookie'] . 'passkey', $getPasswordFromDB->rows[0]->user_passkey, (time() + 60*60*24*365)); // sha1-hash with password
+		setcookie($config['user_cookie'] . 'logindate', time(), (time() + 60*60*24*365)); // login-date
+	}
+	header("Location: index.php");
+}
+
+if($mainContainer->config['user_rank'] == -1 && $currentModule != 'login')
+{
+	setcookie($config['user_cookie'] . 'userid', '', (time() - 60*60*24*365), '/');
+	setcookie($config['user_cookie'] . 'passkey', '', (time() - 60*60*24*365), '/');
+	
+	// if filelist should be downloaded from app, do not forward to login-page,
+	// but put HTTP statuscode/error 500 in header
+	if(isset($_REQUEST['m']) && $_REQUEST['m'] == 'filemanager' && isset($_REQUEST['type']) && ($_REQUEST['type'] == 'filelist' || $_REQUEST['type'] == 'getfile'))
+	{
+		header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
+		exit();
+	}
+	else
+	{
+		// go to login screen
+		header("Location: index.php?m=login");
+	}
+}
+
+
 /*
 ===============
 form processing
@@ -111,9 +158,6 @@ if(isset($_REQUEST['submit']) && $_REQUEST['submit'] == 'form')
 			$currentProcessingModule->processForm();
 		}
 	}
-	
-	// TODO: update files, (Localisable.string, xml-files...)
-	// needs a merge with "filemanager" here...
 }
 
 /*
