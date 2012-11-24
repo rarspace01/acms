@@ -118,7 +118,7 @@ class apdViewBasicModule implements apdIView
 		preg_match_all('#\{FOR_TABBARS(.*?)FOR_TABBARS\}#si', $this->template, $forTabbars);
 		$forTabbars[0] = "";
 		// select all tabbars
-		$tabbarQuery = $this->mc->database->query("SELECT tabbar_id, tabbar_name FROM " . $this->mc->config['database_pref'] . "tabbars AS A ORDER BY tabbar_name ASC", array(), array(array("tabbars", "tabbar_id")));
+		$tabbarQuery = $this->mc->database->query("SELECT tabbar_id, tabbar_name FROM " . $this->mc->config['database_pref'] . "tabbars AS A WHERE 1 ORDER BY tabbar_name ASC", array(), array(array("tabbars", "tabbar_id")));
 		foreach($tabbarQuery->rows as $currentTabbar)
 		{
 			$currentTabbarTpl = preg_replace('#\{TABBARID\}#si', $currentTabbar->tabbar_id, $forTabbars[1][0]);
