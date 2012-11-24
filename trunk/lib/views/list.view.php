@@ -95,6 +95,7 @@ class apdViewList extends apdViewBasicModule
 			$currentLanguageTpl = preg_replace('#\{LANGUAGEID\}#si', $availableLanguage->local_id, $forLanguages[1][0]);
 			// display name for this language in current session-language
 			$currentLanguageTpl = preg_replace('#\{LANGUAGE\}#si', $this->mc->language->getLocalisation($availableLanguage->local_name), $currentLanguageTpl);
+			$currentLanguageTpl = preg_replace('#\{LANGUAGEKEY\}#si', $availableLanguage->local_key, $currentLanguageTpl);
 			$currentLanguageTpl = preg_replace('#\{COMMA\}#si', ($i < (count($languageQuery->rows)-1)) ? ',' : '', $currentLanguageTpl);
 			
 			

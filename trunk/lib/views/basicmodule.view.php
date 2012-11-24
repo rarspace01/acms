@@ -97,7 +97,7 @@ class apdViewBasicModule implements apdIView
 		{
 			while (false !== ($currentPicture = readdir($pictureFolderHandle)) )
 			{
-				if(!preg_match('#^\.|\.\.|/+|\\\\+$#si', $currentPicture))
+				if(!is_dir($pictureFolderPath . $currentPicture) && !preg_match('#^\.|\.\.|/+|\\\\+$#si', $currentPicture))
 				{
 					list($bgImgWidth, $bgImgHeight) = getimagesize($pictureFolderPath . $currentPicture);
 					if($bgImgWidth >= 320 && $bgImgHeight >= 440)
