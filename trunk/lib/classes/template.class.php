@@ -128,8 +128,12 @@ class apdTemplate
 	*/
 	function applyFilters()
 	{
+		// in case user is not logged in
+		$this->template = preg_replace('#\{PERMISSION:guest\}(.*?){PERMISSION}#si', ($this->mc->config['user_rank'] == -1 ? "$1" : ""), $this->template);
+		// replace other permission-variables
+		$this->template = preg_replace('#\{PERMISSION:(.+?)\}(.*?){PERMISSION}#sie', '$this->mc->permissions->checkPermissionTemplate("$1", "$2")', $this->template);
 		// replace language-variables
-		$this->template = preg_replace('#\{LANG:(.+?)\}#se', '$this->mc->language->getLocalisation("$1")', $this->template);
+		$this->template = preg_replace('#\{LANG:(.+?)\}#sie', '$this->mc->language->getLocalisation("$1")', $this->template);
 		// replace language-variables
 		$this->template = preg_replace('#\{CONFIG_UPLOADDIR\}#si', $this->mc->config['upload_dir'], $this->template);
 	}

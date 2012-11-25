@@ -38,10 +38,17 @@
 	</div>
 	
 	<div id="m_navigation">
+	
+		{PERMISSION:logged_in}
 		{NAVIGATION}
 		
 		<a href="index.php?m=filemanager">{LANG:filemanager}</a><br />
 		<a href="index.php?m=localisations">{LANG:localisations}</a>
+		{PERMISSION}
+		
+		{PERMISSION:guest}
+		<img src="templates/default/grafix/shinsolutions_app_icon.png" alt="SHIN Solutions" title="SHIN Solutions" />
+		{PERMISSION}
 	</div>
 	
 	<div id="m_content">

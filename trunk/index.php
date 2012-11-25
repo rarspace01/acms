@@ -26,6 +26,7 @@ include('lib/classes/filecreator.class.php');	// creates the xml-files for outpu
 include('lib/classes/language.class.php');		// language support
 include('lib/classes/logger.class.php');		// logger
 include('lib/classes/navigation.class.php');	// creates the navigation / structure of the app
+include('lib/classes/permissions.class.php');	// handles permissions for users
 include('lib/classes/template.class.php');		// template engine
 
 
@@ -38,6 +39,7 @@ class adpMainContainer
 	public $language;
 	public $logger;
 	public $navigation;
+	public $permissions;
 	public $template;
 	
 	public $config;
@@ -65,6 +67,8 @@ class adpMainContainer
 		$this->logger		= new apdLogger();
 		// navigation, creating the visible app hierarchy for navigation
 		$this->navigation	= new apdNavigation($this);
+		// handles permissions for users
+		$this->permissions	= new apdPermissions($this);
 		// template engine
 		$this->template		= new apdTemplate($this);
 	}
@@ -106,7 +110,7 @@ if(isset($_COOKIE[$config['user_cookie'] . 'userid']) && trim($_COOKIE[$config['
 		}
 	}
 }
-else if(isset($_REQUEST['submit']) && $_REQUEST['submit'] == 'login')
+if(isset($_REQUEST['submit']) && $_REQUEST['submit'] == 'login')
 {
 	$getPasswordFromDB = $mainContainer->database->query("SELECT `user_id`, `group_id`, `user_passkey` FROM `" . $config['database_pref'] . "users` WHERE `user_name` = ?", array(array($_REQUEST['loginname'])));
 	// if password is equal with sha1-hash from DB, set cookie
@@ -118,11 +122,16 @@ else if(isset($_REQUEST['submit']) && $_REQUEST['submit'] == 'login')
 	}
 	header("Location: index.php");
 }
+if(isset($_REQUEST['submit']) && $_REQUEST['submit'] == 'logout')
+{
+	$currentModule = 'home';
+	$mainContainer->config['user_rank'] = -1;
+}
 
 if($mainContainer->config['user_rank'] == -1 && $currentModule != 'login')
 {
-	setcookie($config['user_cookie'] . 'userid', '', (time() - 60*60*24*365), '/');
-	setcookie($config['user_cookie'] . 'passkey', '', (time() - 60*60*24*365), '/');
+	setcookie($config['user_cookie'] . 'userid', '', (time() - 60*60*24*365));
+	setcookie($config['user_cookie'] . 'passkey', '', (time() - 60*60*24*365));
 	
 	// if filelist should be downloaded from app, do not forward to login-page,
 	// but put HTTP statuscode/error 500 in header
