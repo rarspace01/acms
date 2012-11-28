@@ -81,6 +81,7 @@ class apdViewLocalisations implements apdIView
 		{
 			$currentLanguageTpl = preg_replace('#\{LANGUAGE\}#si', $this->mc->language->getLocalisation($currentLocale->local_name), $forLanguages[1][0]);
 			$currentLanguageTpl = preg_replace('#\{LANGUAGEID\}#si', ($currentLocale->local_id), $currentLanguageTpl);
+			$currentLanguageTpl = preg_replace('#\{LANGUAGEKEY\}#si', $currentLocale->local_key, $currentLanguageTpl);
 			$currentLanguageTpl = preg_replace('#\{LANGUAGEACTIVE\}#si', (($currentLocale->local_active == 1) ? 'checked="checked"' : ''), $currentLanguageTpl);
 				
 			$forLanguages[0] .= $currentLanguageTpl;

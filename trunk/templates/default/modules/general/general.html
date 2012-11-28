@@ -1,0 +1,17 @@
+
+	<h1>{LANG:generalsettings}</h1>
+	
+	<form action="index.php" method="POST">
+		
+		<input type="hidden" name="submit" value="form" />
+		<input type="hidden" name="m" value="general" />
+		
+		<div class="content_form_text">{LANG:startview}</div>
+		<div class="content_form_input"><select name="startview">{FOR_VIEWS<option value="{VIEW_ID}" {VIEW_SELECTED}>{VIEW_NAME}</option>FOR_VIEWS}</select></div>
+		<div class="content_form_details">{LANG:helptext_basic_startview}</div>
+		
+		<div class="content_submit_button">
+			<input type="submit" value="{LANG:submit}" />
+		</div>
+		
+	</form>

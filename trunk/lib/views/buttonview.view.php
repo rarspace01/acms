@@ -193,7 +193,7 @@ class apdViewButtonview extends apdViewBasicModule
 		image
 		=====
 		*/
-		$imageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_buttonview_images WHERE view_id = ? AND view_type = ?", array(array($this->viewId, "i"), array($deviceId, "i")), array(array("concept_buttonview_images", "view_id", "view_type")));
+		$imageQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_buttonview_images AS A WHERE view_id = ? AND view_type = ?", array(array($this->viewId, "i"), array($deviceId, "i")), array(array("concept_buttonview_images", "view_id", "view_type")));
 		if(count($imageQuery->rows) > 0)
 		{
 			$template = preg_replace('#\{IMAGENAME\}#si', $imageQuery->rows[0]->image, $template);
