@@ -110,7 +110,7 @@ if(isset($_COOKIE[$config['user_cookie'] . 'userid']) && trim($_COOKIE[$config['
 		}
 	}
 }
-if(isset($_REQUEST['submit']) && $_REQUEST['submit'] == 'login')
+if($mainContainer->config['user_rank'] == -1 && isset($_REQUEST['submit']) && $_REQUEST['submit'] == 'login')
 {
 	$getPasswordFromDB = $mainContainer->database->query("SELECT `user_id`, `group_id`, `user_passkey` FROM `" . $config['database_pref'] . "users` WHERE `user_name` = ?", array(array($_REQUEST['loginname'])));
 	// if password is equal with sha1-hash from DB, set cookie

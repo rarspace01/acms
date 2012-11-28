@@ -55,8 +55,8 @@ class apdViewTabBar implements apdIView
 			{
 				$this->tabBarDetails = $tabBarDetailQuery->rows[0];
 				
-				$this->tabs = array();				
-				$tabBarTabsQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "tabs AS A WHERE tabbar_id = ? ORDER BY tab_position ASC", array(array($this->tabBarId, "i")), array(array("tabs", "tabbar_id", "tab_id")));
+				$this->tabs = array();
+				$tabBarTabsQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "tabs WHERE tabbar_id = ? AND revision = (SELECT MAX(revision) FROM " . $this->mc->config['database_pref'] . "tabs) ORDER BY tab_position ASC", array(array($this->tabBarId, "i")));
 				foreach($tabBarTabsQuery->rows as $currentTab)
 				{
 					$this->tabs[] = $currentTab;

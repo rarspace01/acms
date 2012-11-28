@@ -67,7 +67,7 @@ class apdFileCreator
 		foreach($tabbarQuery->rows as $currentTabbar)
 		{
 			$tabbarOutput .= '<tabbar tabid="' . $currentTabbar->tabbar_id . '">';
-			$tabbarTabQuery = $this->mc->database->query("SELECT A.tab_default, B.view_name, A.tab_icon FROM " . $this->mc->config['database_pref'] . "tabs AS A, " . $this->mc->config['database_pref'] . "views AS B WHERE A.tabbar_id = ? AND A.tab_view = B.view_id ORDER BY tab_position ASC", array(array($currentTabbar->tabbar_id, "i")), array(array("tabs", "tabbar_id", "tab_id"), array("views", "view_id")));
+			$tabbarTabQuery = $this->mc->database->query("SELECT A.tab_default, B.view_name, A.tab_icon FROM " . $this->mc->config['database_pref'] . "tabs AS A, " . $this->mc->config['database_pref'] . "views AS B WHERE A.tabbar_id = ? AND A.tab_view = B.view_id AND A.revision = (SELECT MAX(revision) FROM " . $this->mc->config['database_pref'] . "tabs) ORDER BY tab_position ASC", array(array($currentTabbar->tabbar_id, "i")), array(array("tabs", "tabbar_id", "tab_id"), array("views", "view_id")));
 			// iterate here, because we need the index as position
 			// (do not rely that tab_position is coherent)
 			for($i = 0; $i < count($tabbarTabQuery->rows); $i++)
