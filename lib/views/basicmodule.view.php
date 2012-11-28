@@ -138,12 +138,6 @@ class apdViewBasicModule implements apdIView
 			$this->template = preg_replace('#\{NAVIGATIONBARCHECKED\}#si', 'checked="checked"', $this->template);
 		else
 			$this->template = preg_replace('#\{NAVIGATIONBARCHECKED\}#si', '', $this->template);
-			
-		// check for starting page
-		if($this->viewId >= 0 && $this->viewDetails->view_start == 1)
-			$this->template = preg_replace('#\{STARTVIEWCHECKED\}#si', 'checked="checked"', $this->template);
-		else
-			$this->template = preg_replace('#\{STARTVIEWCHECKED\}#si', '', $this->template);
 	
 		// get all languages that exist from "languages" table in database
 		// we need all columns
@@ -160,6 +154,7 @@ class apdViewBasicModule implements apdIView
 			$currentLanguageTpl = preg_replace('#\{LANGUAGEID\}#si', $availableLanguage->local_id, $forLanguagesBasic[1][0]);
 			// display name of this language (in current session-language)
 			$currentLanguageTpl = preg_replace('#\{LANGUAGE\}#si', $this->mc->language->getLocalisation($availableLanguage->local_name), $currentLanguageTpl);
+			$currentLanguageTpl = preg_replace('#\{LANGUAGEKEY\}#si', $availableLanguage->local_key, $currentLanguageTpl);
 			
 			// if there is a valid view that exists already (edit mode)
 			if($this->viewId >= 0)
@@ -204,7 +199,7 @@ class apdViewBasicModule implements apdIView
 			$this->viewList = array();
 			
 			// query all views
-			$viewListQuery = $this->mc->database->query("SELECT view_id, view_name FROM " . $this->mc->config['database_pref'] . "views AS A ORDER BY view_id", array(), array(array("views", "view_id")));
+			$viewListQuery = $this->mc->database->query("SELECT view_id, view_name FROM " . $this->mc->config['database_pref'] . "views AS A WHERE 1 ORDER BY view_id", array(), array(array("views", "view_id")));
 			
 			foreach($viewListQuery->rows as $currentView)
 			{

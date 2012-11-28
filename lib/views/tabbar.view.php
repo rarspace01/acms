@@ -236,7 +236,7 @@ class apdViewTabBar implements apdIView
 			$this->viewList = array();
 			
 			// query all views
-			$viewListQuery = $this->mc->database->query("SELECT view_id, view_name FROM " . $this->mc->config['database_pref'] . "views AS A ORDER BY view_id", array(), array(array("views", "view_id")));
+			$viewListQuery = $this->mc->database->query("SELECT view_id, view_name FROM " . $this->mc->config['database_pref'] . "views AS A WHERE 1 ORDER BY view_id", array(), array(array("views", "view_id")));
 			
 			foreach($viewListQuery->rows as $currentView)
 			{
