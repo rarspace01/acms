@@ -15,10 +15,13 @@ including files
 ========
 */
 
+
 $configSet = true;
 
 // config-file
 include('includes/config.php');
+
+// classes
 include('lib/classes/apphierarchy.class.php');	// creates the app hierarchy
 include('lib/classes/database.class.php');		// database connection
 include('lib/classes/devicetypes.class.php');	// handling different devicetypes
@@ -29,6 +32,9 @@ include('lib/classes/navigation.class.php');	// creates the navigation / structu
 include('lib/classes/permissions.class.php');	// handles permissions for users
 include('lib/classes/template.class.php');		// template engine
 
+// interfaces and abstract classes
+include('modules/basicmodule.module.php');
+include('modules/ifilecreator.module.php');
 
 class adpMainContainer
 {
@@ -193,5 +199,5 @@ if(function_exists('initCurrentView'))
 }
 
 // prepare the template for presentation
-echo $mainContainer->template->prepareTemplate();
+echo stripslashes($mainContainer->template->prepareTemplate());
 ?>

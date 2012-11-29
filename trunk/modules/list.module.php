@@ -8,32 +8,29 @@ Class for processing a sent form for this
 view-concept
 */
 
-if(!isset($configSet) OR !$configSet)
-	exit();
-
-// load basic view	
-include('modules/basicmodule.module.php');
-
-/**
-* function - initCurrentModule
-* --
-* in order to init this view dynamically, this function is needed
-* which returns an instance without the caller knowing the class-name.
-* --
-* @param: $mainContainer
-*		container that contains all instances
-* @return: class
-* --
-*/
-function initCurrentModule($mainContainer)
+if(!function_exists('initCurrentModule'))
 {
-	// check if a view-id was given
-	// will call parent constructor!
-	return new apdModuleList($mainContainer,
-		(
-		(isset($_REQUEST['view_id']) && intval($_REQUEST['view_id']) >= 0)
-			? intval($_REQUEST['view_id']) : -1
-		));
+	/**
+	* function - initCurrentModule
+	* --
+	* in order to init this view dynamically, this function is needed
+	* which returns an instance without the caller knowing the class-name.
+	* --
+	* @param: $mainContainer
+	*		container that contains all instances
+	* @return: class
+	* --
+	*/
+	function initCurrentModule($mainContainer)
+	{
+		// check if a view-id was given
+		// will call parent constructor!
+		return new apdModuleList($mainContainer,
+			(
+			(isset($_REQUEST['view_id']) && intval($_REQUEST['view_id']) >= 0)
+				? intval($_REQUEST['view_id']) : -1
+			));
+	}
 }
 
 class apdModuleList extends apdModuleBasicModule
@@ -93,7 +90,19 @@ class apdModuleList extends apdModuleBasicModule
 							$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "localisation_keys (local_id, local_key, local_value, revision) VALUES(?,?,?,?)", array(array($availableLanguage->local_id, "i"), array($sectionRowLanguageKey), array($_REQUEST['row_name_' . $i . '_' . $j . '_' . $availableLanguage->local_id]), array($this->mc->config['current_revision'], "i")));
 							
 						// update concept_list_cells
-						$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_list_cells (view_id, section_id, cell_position, cell_content, cell_action, cell_image, revision) VALUES(?, ?, ?, ?, ?, '', ?)", array(array($this->viewId, "i"), array($sectionCounter, "i"), array($rowCounter, "i"), array($sectionRowLanguageKey, "s"), array($_REQUEST['loadaction_view_' . $i . '_' . $j], "i"), array($this->mc->config['current_revision'], "i")));
+						$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_list_cells (view_id, section_id, cell_position, cell_content, cell_action, cell_image, revision) VALUES(?, ?, ?, ?, ?, '', ?)", array(array($this->viewId, "i"), array($sectionCounter, "i"), array($rowCounter, "i"), array($sectionRowLanguageKey, "s"), array($_REQUEST['loadaction_view_' . $i . '_' . $j], "s"), array($this->mc->config['current_revision'], "i")));
+						
+						// insert links as children for this page
+						if(is_numeric($_REQUEST['loadaction_view_' . $i . '_' . $j]))
+						{
+							// check if link exists in database already
+							$checkViewDestinationQuery = $this->mc->database->query("SELECT COUNT(*) as count FROM " . $this->mc->config['database_pref'] . "view_links AS A WHERE view_id_parent = ? AND view_id_destination = ?", array(array($this->viewId, "i"), array($_REQUEST['loadaction_view_' . $i . '_' . $j], "i")), array(array("view_links", "view_id_parent", "view_id_destination")));
+							if($checkViewDestinationQuery->rows[0]->count == 0)
+							{
+								// insert new link
+								$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "view_links (view_id_parent, view_id_destination, revision) VALUES(?, ?, ?)", array(array($this->viewId, "i"), array($_REQUEST['loadaction_view_' . $i . '_' . $j], "i"), array($this->mc->config['current_revision'], "i")));
+							}
+						}
 					}
 				}
 			}
@@ -149,17 +158,23 @@ class apdModuleList extends apdModuleBasicModule
 				$output .= '<row content="' . $currentSectionRow->cell_content . '"';
 				if($currentSectionRow->cell_action >= 0)
 				{
-					$rowActionQuery = $this->mc->database->query("SELECT view_name FROM " . $this->mc->config['database_pref'] . "views WHERE view_id = ?", array(array($currentSectionRow->cell_action)));
+					$rowActionQuery = $this->mc->database->query("SELECT A.view_name, B.concept_key FROM " . $this->mc->config['database_pref'] . "views AS A, " . $this->mc->config['database_pref'] . "concepts AS B WHERE A.view_id = ? AND A.view_c_type = B.concept_id", array(array($currentSectionRow->cell_action, "i")));
 					if(count($rowActionQuery->rows) > 0)
 					{
-						$output .= ' action="loadPage::' . $rowActionQuery->rows[0]->view_name . '&amp;YES"';
-						
-						// check if link exists in database already
-						$checkViewDestinationQuery = $this->mc->database->query("SELECT COUNT(*) as count FROM " . $this->mc->config['database_pref'] . "view_links AS A WHERE view_id_parent = ? AND view_id_destination = ?", array(array($this->viewId, "i"), array($currentSectionRow->cell_action, "i")), array(array("view_links", "view_id_parent", "view_id_destination")));
-						if($checkViewDestinationQuery->rows[0]->count == 0)
+						// check if there exists a special class for creating the xml definitions
+						$className = "apdFilecreator" . strtoupper(substr($rowActionQuery->rows[0]->concept_key, 0, 1)) . substr($rowActionQuery->rows[0]->concept_key, 1);
+						if(!class_exists($className))
 						{
-							// insert new link
-							$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "view_links (view_id_parent, view_id_destination, revision) VALUES(?, ?, ?)", array(array($this->viewId, "i"), array($currentSectionRow->cell_action, "i"), array($this->mc->config['current_revision'], "i")));
+							include('modules/' . $rowActionQuery->rows[0]->concept_key . '.module.php');
+						}
+						if(class_exists($className))
+						{
+							$currentFileCreator = new $className;
+							$output .= ' action="' . $currentFileCreator->createLink($rowActionQuery->rows[0]->view_name, $currentSectionRow->cell_action) . "\" />\n";
+						}
+						else
+						{
+							$output .= ' action="loadPage::' . $rowActionQuery->rows[0]->view_name . "&amp;YES\" />\n";
 						}
 					}
 				}
@@ -175,5 +190,24 @@ class apdModuleList extends apdModuleBasicModule
 		fclose($outputFileHandle);
 		
 		return true;
+	}
+}
+
+class apdFilecreatorList extends apdIFilecreator
+{
+	/**
+	* function - createLink
+	* --
+	* returns an action-string to intialise the given view
+	* --
+	* @param: $viewName
+	* @param: $viewId
+	* @param: $deviceKey
+	* @return: (String) action-string like "loadPage::view"
+	* --
+	*/
+	function createLink($viewName)
+	{
+		return "loadPopoverTable::" . $viewName . "&amp;YES";
 	}
 }

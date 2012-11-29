@@ -8,32 +8,29 @@ Class for processing a sent form for this
 view-concept
 */
 
-if(!isset($configSet) OR !$configSet)
-	exit();
-
-// load basic view	
-include('modules/basicmodule.module.php');
-
-/**
-* function - initCurrentModule
-* --
-* in order to init this view dynamically, this function is needed
-* which returns an instance without the caller knowing the class-name.
-* --
-* @param: $mainContainer
-*		container that contains all instances
-* @return: class
-* --
-*/
-function initCurrentModule($mainContainer)
+if(!function_exists('initCurrentModule'))
 {
-	// check if a view-id was given
-	// will call parent constructor!
-	return new apdModuleMediacenter($mainContainer,
-		(
-		(isset($_REQUEST['view_id']) && intval($_REQUEST['view_id']) >= 0)
-			? intval($_REQUEST['view_id']) : -1
-		));
+	/**
+	* function - initCurrentModule
+	* --
+	* in order to init this view dynamically, this function is needed
+	* which returns an instance without the caller knowing the class-name.
+	* --
+	* @param: $mainContainer
+	*		container that contains all instances
+	* @return: class
+	* --
+	*/
+	function initCurrentModule($mainContainer)
+	{
+		// check if a view-id was given
+		// will call parent constructor!
+		return new apdModuleMediacenter($mainContainer,
+			(
+			(isset($_REQUEST['view_id']) && intval($_REQUEST['view_id']) >= 0)
+				? intval($_REQUEST['view_id']) : -1
+			));
+	}
 }
 
 class apdModuleMediacenter extends apdModuleBasicModule

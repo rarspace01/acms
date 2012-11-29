@@ -2,6 +2,7 @@
 		function display_navigation_item(itemId, imgId) {
 			var itemContainer = document.getElementById(itemId);
 			
+			
 			if(itemContainer) {
 				imgId.src = 'templates/default/grafix/' + ((itemContainer.style.display == 'block') ? 'expand' : 'fold') + '.png';
 				itemContainer.style.display = (itemContainer.style.display == 'block') ? 'none' : 'block';

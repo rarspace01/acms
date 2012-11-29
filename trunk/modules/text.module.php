@@ -8,32 +8,29 @@ Class for processing a sent form for this
 view-concept
 */
 
-if(!isset($configSet) OR !$configSet)
-	exit();
-
-// load basic view	
-include('modules/basicmodule.module.php');
-
-/**
-* function - initCurrentModule
-* --
-* in order to init this view dynamically, this function is needed
-* which returns an instance without the caller knowing the class-name.
-* --
-* @param: $mainContainer
-*		container that contains all instances
-* @return: class
-* --
-*/
-function initCurrentModule($mainContainer)
+if(!function_exists('initCurrentModule'))
 {
-	// check if a view-id was given
-	// will call parent constructor!
-	return new apdModuleText($mainContainer,
-		(
-		(isset($_REQUEST['view_id']) && intval($_REQUEST['view_id']) >= 0)
-			? intval($_REQUEST['view_id']) : -1
-		));
+	/**
+	* function - initCurrentModule
+	* --
+	* in order to init this view dynamically, this function is needed
+	* which returns an instance without the caller knowing the class-name.
+	* --
+	* @param: $mainContainer
+	*		container that contains all instances
+	* @return: class
+	* --
+	*/
+	function initCurrentModule($mainContainer)
+	{
+		// check if a view-id was given
+		// will call parent constructor!
+		return new apdModuleText($mainContainer,
+			(
+			(isset($_REQUEST['view_id']) && intval($_REQUEST['view_id']) >= 0)
+				? intval($_REQUEST['view_id']) : -1
+			));
+	}
 }
 
 class apdModuleText extends apdModuleBasicModule
@@ -107,8 +104,8 @@ class apdModuleText extends apdModuleBasicModule
 			// for every language, create an entry in _concept_text for the html-text
 			$this->mc->database->query("INSERT INTO " . $this->mc->config['database_pref'] . "concept_text (view_id, language, content, revision) VALUES(?, ?, ?, ?)", array(array($this->viewId, "i"), array($availableLanguage->local_id, "i"), array($currentContent), array($this->mc->config['current_revision'], "i")));
 			
-			// now search for a regular expression with loadPage::XXXX
-			preg_match_all('#(?:(?:<a)|(?:<script))(?:.+?)loadPage::(.+?)["\'&> ;\r\n](?:.*?)(?:(?:</a>)|(?:</script>))#si', $_REQUEST['content_' . $availableLanguage->local_id], $allOutgoingLinks, PREG_SET_ORDER);
+			// now search for a regular expression with loadPage::XXXXX or loadXYZ:XXXXX
+			preg_match_all('#(?:(?:<a)|(?:<script))(?:.+?)load(?:[a-zA-Z0-9]+?)::(.+?)["\'&> ;\r\n](?:.*?)(?:(?:</a>)|(?:</script>))#si', $_REQUEST['content_' . $availableLanguage->local_id], $allOutgoingLinks, PREG_SET_ORDER);
 			// go through list of matches
 			foreach($allOutgoingLinks as $currentLink)
 			{
