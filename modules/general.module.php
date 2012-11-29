@@ -6,26 +6,26 @@ AppPH Design (c) 2012 SHIN Solutions
 
 General settings for the app
 */
-
-if(!isset($configSet) OR !$configSet)
-	exit();
 	
-/**
-* function - initCurrentModule
-* --
-* in order to init this view dynamically, this function is needed
-* which returns an instance without the caller knowing the class-name.
-* --
-* @param: $mainContainer
-*		container that contains all instances
-* @return: class
-* --
-*/
-function initCurrentModule($mainContainer)
+if(!function_exists('initCurrentModule'))
 {
-	// check if a view-id was given
-	// will call parent constructor!
-	return new apdModuleGeneral($mainContainer);
+	/**
+	* function - initCurrentModule
+	* --
+	* in order to init this view dynamically, this function is needed
+	* which returns an instance without the caller knowing the class-name.
+	* --
+	* @param: $mainContainer
+	*		container that contains all instances
+	* @return: class
+	* --
+	*/
+	function initCurrentModule($mainContainer)
+	{
+		// check if a view-id was given
+		// will call parent constructor!
+		return new apdModuleGeneral($mainContainer);
+	}
 }
 
 class apdModuleGeneral

@@ -10,9 +10,6 @@ will create an array containing the app as hierarchical
 structure with tabbars and navigation controllers
 */
 
-if(!isset($configSet) OR !$configSet)
-	exit();
-
 class apdFileCreator
 {
 	/**
@@ -87,23 +84,37 @@ class apdFileCreator
 		===============
 		*/
 		$output .= '<pages>';
-		$viewQuery = $this->mc->database->query("SELECT A.*, B.concept_view FROM " . $this->mc->config['database_pref'] . "views AS A, " . $this->mc->config['database_pref'] . "concepts AS B WHERE A.view_c_type = B.concept_id", array(), array(array("views", "view_id")));
+		$viewQuery = $this->mc->database->query("SELECT A.*, B.concept_view, B.concept_key FROM " . $this->mc->config['database_pref'] . "views AS A, " . $this->mc->config['database_pref'] . "concepts AS B WHERE A.view_c_type = B.concept_id", array(), array(array("views", "view_id")));
 		foreach($viewQuery->rows as $currentView)
 		{
-			// general page information
-			$output .= '<page pageid="' . $currentView->view_name . '"';
-			if($currentView->view_start == 1)
-				$output .= ' front="true"'; // front page?
-			if($currentView->view_navigationbar == 1)
-				$output .= ' initWithNaviCtrl="true"'; // has a navigation controller?
-			if($currentView->view_tabbar >= 0)
-				$output .= ' tabbarid="' . $currentView->view_tabbar . '"'; // initialises a tabbar?
-			if($currentView->view_background != '' && $currentView->view_background != null)
-				$output .= ' background="' . $currentView->view_background . '"'; // has a set background?
-			$output .= '>';
-				// view information
-				$output .= '<view type="' . $currentView->concept_view . '" action="' . $currentView->view_action . '" />';
-			$output .= '</page>';
+			// check if there exists a special class for creating the xml definitions
+			$className = "apdFilecreator" . strtoupper(substr($currentView->concept_key, 0, 1)) . substr($currentView->concept_key, 1);
+			if(!class_exists($className))
+			{
+				include('modules/' . $currentView->concept_key . '.module.php');
+			}
+			if(class_exists($className))
+			{
+				$currentFileCreator = new $className;
+				$output .= $currentFileCreator->createMainXmlPages($currentView->view_id);
+			}
+			else
+			{		
+				// general page information
+				$output .= '<page pageid="' . $currentView->view_name . '"';
+				if($currentView->view_start == 1)
+					$output .= ' front="true"'; // front page?
+				if($currentView->view_navigationbar == 1)
+					$output .= ' initWithNaviCtrl="true"'; // has a navigation controller?
+				if($currentView->view_tabbar >= 0)
+					$output .= ' tabbarid="' . $currentView->view_tabbar . '"'; // initialises a tabbar?
+				if($currentView->view_background != '' && $currentView->view_background != null)
+					$output .= ' background="' . $currentView->view_background . '"'; // has a set background?
+				$output .= '>';
+					// view information
+					$output .= '<view type="' . $currentView->concept_view . '" action="' . $currentView->view_action . '" />';
+				$output .= '</page>';
+			}
 		}
 		$output .= '</pages>';
 		

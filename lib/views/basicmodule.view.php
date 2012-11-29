@@ -8,8 +8,6 @@ Basic class for displaying editpages
 for concept views
 */
 
-if(!isset($configSet) OR !$configSet)
-	exit();
 
 include('lib/views/iview.view.php');
 

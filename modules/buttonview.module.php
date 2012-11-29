@@ -8,32 +8,29 @@ Class for processing a sent form for this
 view-concept
 */
 
-if(!isset($configSet) OR !$configSet)
-	exit();
-
-// load basic view	
-include('modules/basicmodule.module.php');
-
-/**
-* function - initCurrentModule
-* --
-* in order to init this view dynamically, this function is needed
-* which returns an instance without the caller knowing the class-name.
-* --
-* @param: $mainContainer
-*		container that contains all instances
-* @return: class
-* --
-*/
-function initCurrentModule($mainContainer)
+if(!function_exists('initCurrentModule'))
 {
-	// check if a view-id was given
-	// will call parent constructor!
-	return new apdModuleButtonview($mainContainer,
-		(
-		(isset($_REQUEST['view_id']) && intval($_REQUEST['view_id']) >= 0)
-			? intval($_REQUEST['view_id']) : -1
-		));
+	/**
+	* function - initCurrentModule
+	* --
+	* in order to init this view dynamically, this function is needed
+	* which returns an instance without the caller knowing the class-name.
+	* --
+	* @param: $mainContainer
+	*		container that contains all instances
+	* @return: class
+	* --
+	*/
+	function initCurrentModule($mainContainer)
+	{
+		// check if a view-id was given
+		// will call parent constructor!
+		return new apdModuleButtonview($mainContainer,
+			(
+			(isset($_REQUEST['view_id']) && intval($_REQUEST['view_id']) >= 0)
+				? intval($_REQUEST['view_id']) : -1
+			));
+	}
 }
 
 class apdModuleButtonview extends apdModuleBasicModule
@@ -120,7 +117,6 @@ class apdModuleButtonview extends apdModuleBasicModule
 		
 		// re-create main xml file and refresh filelist
 		$this->mc->filecreator->createGeneralFiles();
-		$configSet = true;
 		include('modules/filemanager.module.php');
 		$fileManagerObj = new apdModuleFilemanager($this->mc);
 		$fileManagerObj->refreshFilelist();
@@ -247,9 +243,25 @@ class apdModuleButtonview extends apdModuleBasicModule
 				
 				if(is_numeric($currentButtonAction->action_command))
 				{
-					$actionViewQuery = $this->mc->database->query("SELECT view_name FROM " . $this->mc->config['database_pref'] . "views WHERE view_id = ?", array(array($currentButtonAction->action_command, "i")));
+					$actionViewQuery = $this->mc->database->query("SELECT A.view_name, B.concept_key FROM " . $this->mc->config['database_pref'] . "views AS A, " . $this->mc->config['database_pref'] . "concepts AS B WHERE A.view_id = ? AND A.view_c_type = B.concept_id", array(array($currentButtonAction->action_command, "i")));
 					if(count($actionViewQuery->rows) > 0)
-						$output .= ' action="loadPage::' . $actionViewQuery->rows[0]->view_name . "&amp;YES\" />\n";
+					{
+						// check if there exists a special class for creating the xml definitions
+						$className = "apdFilecreator" . strtoupper(substr($actionViewQuery->rows[0]->concept_key, 0, 1)) . substr($actionViewQuery->rows[0]->concept_key, 1);
+						if(!class_exists($className))
+						{
+							include('modules/' . $actionViewQuery->rows[0]->concept_key . '.module.php');
+						}
+						if(class_exists($className))
+						{
+							$currentFileCreator = new $className;
+							$output .= ' action="' . $currentFileCreator->createLink($actionViewQuery->rows[0]->view_name, $currentButtonAction->action_command, $currentDeviceType->device_key) . "\" />\n";
+						}
+						else
+						{
+							$output .= ' action="loadPage::' . $actionViewQuery->rows[0]->view_name . "&amp;YES\" />\n";
+						}
+					}
 				}
 				else
 				{

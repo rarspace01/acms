@@ -6,9 +6,6 @@ AppPH Design (c) 2012 SHIN Solutions
 
 Template class
 */
-
-if(!isset($configSet) OR !$configSet)
-	exit();
 	
 class apdTemplate
 {
@@ -156,7 +153,7 @@ class apdTemplate
 			$this->loadFooter();
 
 		$this->applyFilters();
-		
+			
 		return $this->template;
 	}
 }
