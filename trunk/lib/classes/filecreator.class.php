@@ -96,6 +96,7 @@ class apdFileCreator
 			if(class_exists($className))
 			{
 				$currentFileCreator = new $className;
+				$currentFileCreator->mc = $this->mc;
 				$output .= $currentFileCreator->createMainXmlPages($currentView->view_id);
 			}
 			else

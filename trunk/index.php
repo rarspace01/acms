@@ -8,13 +8,14 @@ Index class
 */
 
 error_reporting(E_ALL);
+// "reset" error messages
+@trigger_error("");
 
 /*
 ========
 including files
 ========
 */
-
 
 $configSet = true;
 
@@ -86,6 +87,8 @@ init container and template engine
 ==================================
 */
 $mainContainer = new adpMainContainer($config);
+// check if error happened so far
+$mainContainer->logger->errorHappened();
 $mainContainer->template->initTemplate();
 
 /*
@@ -153,6 +156,9 @@ if($mainContainer->config['user_rank'] == -1 && $currentModule != 'login')
 	}
 }
 
+// check if error happened so far
+$mainContainer->logger->errorHappened();
+
 
 /*
 ===============
@@ -166,11 +172,14 @@ if(isset($_REQUEST['submit']) && $_REQUEST['submit'] == 'form')
 	{
 		include('modules/' . $currentModule . '.module.php');
 		if(function_exists('initCurrentModule'))
-		{
+		{			
+			// check if error happened so far
+			$mainContainer->logger->errorHappened();			
 			// initialise an instance of the processing class
-			$currentProcessingModule = initCurrentModule($mainContainer);
+			$currentProcessingModule = initCurrentModule($mainContainer);			
 			// process the current form
 			$currentProcessingModule->processForm();
+			
 		}
 	}
 }
@@ -192,6 +201,8 @@ view (output)
 include('lib/views/' . $currentModule . '.view.php');
 if(function_exists('initCurrentView'))
 {
+	// check if error happened so far
+	$mainContainer->logger->errorHappened();
 	$currentViewModule = initCurrentView($mainContainer);
 	$currentViewModule->initTemplate();	
 	$mainContainer->template->template = preg_replace('#\{CONTENT\}#si', $currentViewModule->printTemplate(), $mainContainer->template->template);

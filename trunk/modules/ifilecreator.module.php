@@ -9,6 +9,8 @@ abstract class for creating xml-files
 
 class apdIFilecreator
 {
+	public $mc;
+
 	/**
 	* function - Constructor
 	* --
@@ -17,10 +19,10 @@ class apdIFilecreator
 	* @return: class
 	* --
 	*/
-	function __construct($mainContainer)
+	/*function __construct($mainContainer)
 	{
 		$this->mc		= $mainContainer;
-	}
+	}*/
 	
 	/**
 	* function - createLink
