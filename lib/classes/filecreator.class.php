@@ -100,21 +100,11 @@ class apdFileCreator
 				$output .= $currentFileCreator->createMainXmlPages($currentView->view_id);
 			}
 			else
-			{		
-				// general page information
-				$output .= '<page pageid="' . $currentView->view_name . '"';
-				if($currentView->view_start == 1)
-					$output .= ' front="true"'; // front page?
-				if($currentView->view_navigationbar == 1)
-					$output .= ' initWithNaviCtrl="true"'; // has a navigation controller?
-				if($currentView->view_tabbar >= 0)
-					$output .= ' tabbarid="' . $currentView->view_tabbar . '"'; // initialises a tabbar?
-				if($currentView->view_background != '' && $currentView->view_background != null)
-					$output .= ' background="' . $currentView->view_background . '"'; // has a set background?
-				$output .= '>';
-					// view information
-					$output .= '<view type="' . $currentView->concept_view . '" action="' . $currentView->view_action . '" />';
-				$output .= '</page>';
+			{
+				// otherwise directly create apdIFilecreator instance
+				$currentFileCreator = new apdIFilecreator();
+				$currentFileCreator->mc = $this->mc;
+				$output .= $currentFileCreator->createMainXmlPages($currentView->view_id);
 			}
 		}
 		$output .= '</pages>';
