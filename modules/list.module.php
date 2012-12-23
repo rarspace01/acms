@@ -117,7 +117,7 @@ class apdModuleList extends apdModuleBasicModule
 		// re-create main xml file and refresh filelist
 		$this->mc->filecreator->createGeneralFiles();
 		$configSet = true;
-		include('modules/filemanager.module.php');
+		include_once('modules/filemanager.module.php');
 		$fileManagerObj = new apdModuleFilemanager($this->mc);
 		$fileManagerObj->refreshFilelist();
 		
@@ -163,9 +163,12 @@ class apdModuleList extends apdModuleBasicModule
 					{
 						// check if there exists a special class for creating the xml definitions
 						$className = "apdFilecreator" . strtoupper(substr($rowActionQuery->rows[0]->concept_key, 0, 1)) . substr($rowActionQuery->rows[0]->concept_key, 1);
-						if(!class_exists($className))
+						$orgClassName = "apdModule" . strtoupper(substr($rowActionQuery->rows[0]->concept_key, 0, 1)) . substr($rowActionQuery->rows[0]->concept_key, 1);
+												
+						// only check for inclusion if the "original" module class isn't included yet, either
+						if(!class_exists($orgClassName) && !class_exists($className))
 						{
-							include('modules/' . $rowActionQuery->rows[0]->concept_key . '.module.php');
+							include_once('modules/' . $rowActionQuery->rows[0]->concept_key . '.module.php');
 						}
 						if(class_exists($className))
 						{

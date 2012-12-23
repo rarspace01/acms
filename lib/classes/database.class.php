@@ -46,7 +46,7 @@ class apdDatabase
 		$this->sqlready = true;
 	}
 	
-	function query($sqlQuery, $parameters=array(), $revisionQuery=false)
+	function query($sqlQuery, $parameters=array(), $revisionQuery=false, $printSql=false)
 	{
 		$result = new stdClass();
 		
@@ -104,6 +104,9 @@ class apdDatabase
 					$sqlQuery = substr($sqlQuery, 0, $wherePosition+6) . $addingWhere . substr($sqlQuery, $wherePosition+6);
 				}
 			}
+			
+			if($printSql == true)
+				$this->mc->logger->log($sqlQuery, $parameters);
 		
 			// create a new statement and prepare the sql-query
 			if($sqlStatement = $this->connection->prepare($sqlQuery)) {

@@ -20,22 +20,22 @@ including files
 $configSet = true;
 
 // config-file
-include('includes/config.php');
+include_once('includes/config.php');
 
 // classes
-include('lib/classes/apphierarchy.class.php');	// creates the app hierarchy
-include('lib/classes/database.class.php');		// database connection
-include('lib/classes/devicetypes.class.php');	// handling different devicetypes
-include('lib/classes/filecreator.class.php');	// creates the xml-files for output
-include('lib/classes/language.class.php');		// language support
-include('lib/classes/logger.class.php');		// logger
-include('lib/classes/navigation.class.php');	// creates the navigation / structure of the app
-include('lib/classes/permissions.class.php');	// handles permissions for users
-include('lib/classes/template.class.php');		// template engine
+include_once('lib/classes/apphierarchy.class.php');	// creates the app hierarchy
+include_once('lib/classes/database.class.php');		// database connection
+include_once('lib/classes/devicetypes.class.php');	// handling different devicetypes
+include_once('lib/classes/filecreator.class.php');	// creates the xml-files for output
+include_once('lib/classes/language.class.php');		// language support
+include_once('lib/classes/logger.class.php');		// logger
+include_once('lib/classes/navigation.class.php');	// creates the navigation / structure of the app
+include_once('lib/classes/permissions.class.php');	// handles permissions for users
+include_once('lib/classes/template.class.php');		// template engine
 
 // interfaces and abstract classes
-include('modules/basicmodule.module.php');
-include('modules/ifilecreator.module.php');
+include_once('modules/basicmodule.module.php');
+include_once('modules/ifilecreator.module.php');
 
 class adpMainContainer
 {
@@ -170,7 +170,7 @@ if(isset($_REQUEST['submit']) && $_REQUEST['submit'] == 'form')
 	// check if processing module exists
 	if(file_exists('modules/' . $currentModule . '.module.php'))
 	{
-		include('modules/' . $currentModule . '.module.php');
+		include_once('modules/' . $currentModule . '.module.php');
 		if(function_exists('initCurrentModule'))
 		{			
 			// check if error happened so far
@@ -198,7 +198,7 @@ $mainContainer->template->navigationLoaded = true;
 view (output)
 =============
 */
-include('lib/views/' . $currentModule . '.view.php');
+include_once('lib/views/' . $currentModule . '.view.php');
 if(function_exists('initCurrentView'))
 {
 	// check if error happened so far

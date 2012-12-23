@@ -46,7 +46,7 @@ class apdModuleButtonview extends apdModuleBasicModule
 	* --
 	*/
 	function processForm()
-	{	
+	{
 		$originalViewId = $this->viewId;
 		parent::processForm();		
 		
@@ -117,7 +117,7 @@ class apdModuleButtonview extends apdModuleBasicModule
 		
 		// re-create main xml file and refresh filelist
 		$this->mc->filecreator->createGeneralFiles();
-		include('modules/filemanager.module.php');
+		include_once('modules/filemanager.module.php');
 		$fileManagerObj = new apdModuleFilemanager($this->mc);
 		$fileManagerObj->refreshFilelist();
 		
@@ -230,6 +230,7 @@ class apdModuleButtonview extends apdModuleBasicModule
 		{
 			$output = '<?xml version="1.0" encoding="UTF-8"?><xml>';
 			$buttonActionQuery = $this->mc->database->query("SELECT * FROM " . $this->mc->config['database_pref'] . "concept_buttonview_actions AS A WHERE view_id = ? AND view_type = ?", array(array($this->viewId, "i"), array($currentDeviceType->device_id, "i")), array(array("concept_buttonview_actions", "view_id", "view_type", "action_posx", "action_posy", "action_width", "action_height")));
+			
 			foreach($buttonActionQuery->rows as $currentButtonAction)
 			{
 				// check if buttonaction is suitable for this current tile
@@ -248,9 +249,12 @@ class apdModuleButtonview extends apdModuleBasicModule
 					{
 						// check if there exists a special class for creating the xml definitions
 						$className = "apdFilecreator" . strtoupper(substr($actionViewQuery->rows[0]->concept_key, 0, 1)) . substr($actionViewQuery->rows[0]->concept_key, 1);
-						if(!class_exists($className))
+						$orgClassName = "apdModule" . strtoupper(substr($actionViewQuery->rows[0]->concept_key, 0, 1)) . substr($actionViewQuery->rows[0]->concept_key, 1);
+												
+						// only check for inclusion if the "original" module class isn't included yet, either
+						if(!class_exists($orgClassName) && !class_exists($className))
 						{
-							include('modules/' . $actionViewQuery->rows[0]->concept_key . '.module.php');
+							include_once('modules/' . $actionViewQuery->rows[0]->concept_key . '.module.php');
 						}
 						if(class_exists($className))
 						{
@@ -265,10 +269,10 @@ class apdModuleButtonview extends apdModuleBasicModule
 				}
 				else
 				{
-					$output .= ' action="' . str_replace('"', '\"', $currentButtonAction->action_command) . "\" />\n";
+					$output .= ' action="' . addslashes($currentButtonAction->action_command) . "\" />\n";
 				}
 			}
-				
+			
 			$output .= '</xml>';
 			
 			if(count($buttonActionQuery->rows) > 0)

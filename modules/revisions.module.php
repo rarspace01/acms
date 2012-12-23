@@ -75,7 +75,7 @@ class apdModuleRevisions
 		// re-create main xml file and refresh filelist
 		$this->mc->filecreator->createGeneralFiles();
 		$configSet = true;
-		include('modules/filemanager.module.php');
+		include_once('modules/filemanager.module.php');
 		$fileManagerObj = new apdModuleFilemanager($this->mc);
 		$fileManagerObj->refreshFilelist();
 		
