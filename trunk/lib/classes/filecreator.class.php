@@ -89,9 +89,13 @@ class apdFileCreator
 		{
 			// check if there exists a special class for creating the xml definitions
 			$className = "apdFilecreator" . strtoupper(substr($currentView->concept_key, 0, 1)) . substr($currentView->concept_key, 1);
-			if(!class_exists($className))
-			{
-				include('modules/' . $currentView->concept_key . '.module.php');
+			$orgClassName = "apdModule" . strtoupper(substr($currentView->rows[0]->concept_key, 0, 1)) . substr($currentView->rows[0]->concept_key, 1);
+			
+										
+			// only check for inclusion if the "original" module class isn't included yet, either
+			if(!class_exists($orgClassName) && !class_exists($className))
+			{				
+				include_once('modules/' . $currentView->concept_key . '.module.php');
 			}
 			if(class_exists($className))
 			{
@@ -101,6 +105,7 @@ class apdFileCreator
 			}
 			else
 			{
+				echo "Default creator<br>";
 				// otherwise directly create apdIFilecreator instance
 				$currentFileCreator = new apdIFilecreator();
 				$currentFileCreator->mc = $this->mc;

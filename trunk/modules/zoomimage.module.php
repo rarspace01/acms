@@ -113,7 +113,7 @@ class apdModuleZoomimage extends apdModuleBasicModule
 		// re-create main xml file and refresh filelist
 		$this->mc->filecreator->createGeneralFiles();
 		$configSet = true;
-		include('modules/filemanager.module.php');
+		include_once('modules/filemanager.module.php');
 		$fileManagerObj = new apdModuleFilemanager($this->mc);
 		$fileManagerObj->refreshFilelist();
 		
@@ -331,10 +331,13 @@ class apdModuleZoomimage extends apdModuleBasicModule
 										if(count($actionViewQuery->rows) > 0)
 										{
 											// check if there exists a special class for creating the xml definitions
-											$className = "apdFilecreator" . strtoupper(substr($actionViewQuery->rows[0]->concept_key, 0, 1)) . substr($actionViewQuery->rows[0]->concept_key, 1);
-											if(!class_exists($className))
+											$className = "apdFilecreator" . strtoupper(substr($actionViewQuery->rows[0]->concept_key, 0, 1)) . substr($actionViewQuery->rows[0]->concept_key, 1);											
+											$orgClassName = "apdModule" . strtoupper(substr($actionViewQuery->rows[0]->concept_key, 0, 1)) . substr($actionViewQuery->rows[0]->concept_key, 1);
+																	
+											// only check for inclusion if the "original" module class isn't included yet, either
+											if(!class_exists($orgClassName) && !class_exists($className))
 											{
-												include('modules/' . $actionViewQuery->rows[0]->concept_key . '.module.php');
+												include_once('modules/' . $actionViewQuery->rows[0]->concept_key . '.module.php');
 											}
 											if(class_exists($className))
 											{

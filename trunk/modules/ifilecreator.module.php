@@ -65,7 +65,7 @@ class apdIFilecreator
 		if($viewQuery->rows[0]->view_tabbar >= 0)
 		{
 			// check if tabbar is active
-			$tabbarActiveCheck = $this->mc->database->query("SELECT tabbar_active FROM " . $this->mc->config['database_pref'] . "tabbars AS A WHERE A.tabbar_id = ?", array(array($viewQuery->rows[0]->view_tabbar, "i")), array("tabbars", "tabbar_id"));
+			$tabbarActiveCheck = $this->mc->database->query("SELECT tabbar_active FROM " . $this->mc->config['database_pref'] . "tabbars AS A WHERE A.tabbar_id = ?", array(array($viewQuery->rows[0]->view_tabbar, "i")), array(array("tabbars", "tabbar_id")));
 			if(count($tabbarActiveCheck->rows) > 0 && $tabbarActiveCheck->rows[0]->tabbar_active == 1)
 			{
 				$output .= ' tabbarid="' . $viewQuery->rows[0]->view_tabbar . '"'; // initialises a tabbar?
